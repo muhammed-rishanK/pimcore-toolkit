@@ -1,0 +1,19 @@
+{
+  "name": "pimcore-toolkit",
+  "displayName": "Pimcore Engineering Toolkit",
+  "description": "Version-aware Pimcore engineering toolkit. /pimcore routes development work (analysis, architecture, data modelling, implementation, debugging, integrations, testing, review, upgrades) to the right specialist. /pimcore-setup builds a working Pimcore environment on Linux, macOS, Windows and WSL2, Docker first.",
+  "version": "0.1.0",
+  "keywords": [
+    "pimcore",
+    "symfony",
+    "pim",
+    "php"
+  ],
+  "author": {
+    "name": "muhammed-rishanK",
+    "url": "https://github.com/muhammed-rishanK"
+  },
+  "homepage": "https://github.com/muhammed-rishanK/pimcore-toolkit",
+  "repository": "https://github.com/muhammed-rishanK/pimcore-toolkit",
+  "license": "MIT"
+}

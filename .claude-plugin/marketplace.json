@@ -1,0 +1,17 @@
+{
+  "name": "pimcore-toolkit",
+  "owner": {
+    "name": "muhammed-rishanK",
+    "url": "https://github.com/muhammed-rishanK"
+  },
+  "metadata": {
+    "description": "Pimcore Engineering Toolkit for Claude Code: development workflows and environment setup for any Pimcore project."
+  },
+  "plugins": [
+    {
+      "name": "pimcore-toolkit",
+      "source": "./",
+      "description": "Pimcore development (/pimcore) and environment setup (/pimcore-setup) with specialist agents."
+    }
+  ]
+}
