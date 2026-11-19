@@ -53,7 +53,9 @@ If something is broken, `/pimcore-setup --repair` diagnoses it and applies each 
 /pimcore explain how Product objects get their prices
 ```
 
-Useful `/pimcore-setup` options: `--runtime docker|native`, `--profile skeleton|demo`, `--version 11`, `--dir <path>`, `--check`, `--repair`.
+Run `/pimcore-setup --plan` to see which versions can be installed (with PHP needs and whether a product key is required) and what happens in each situation, without building anything. A normal run prints the same table, installs the recommended row and records the choice.
+
+Useful `/pimcore-setup` options: `--plan`, `--ask`, `--runtime docker|native`, `--profile skeleton|demo`, `--version 11`, `--dir <path>`, `--check`, `--repair`.
 
 ## Usage examples
 

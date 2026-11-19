@@ -89,6 +89,7 @@ Health checks
 5 Optional services       <pass|fail|skipped>  <evidence>
 
 Files created: <paths, secrets files marked (git-ignored, 600)>
-Open items:    <what the user still needs to do>
+Decisions made: <each automatic choice and why, e.g. "folder acme-pim existed, used acme-pim-2", "2026.x needs a product key, installed 11"; none if nothing was decided>
+Needs you:     <only what cannot be done for the user: third-party passwords or tokens, account registration, a sudo password; none if empty>
 ```
 Never include a password, token or the content of a secrets file.

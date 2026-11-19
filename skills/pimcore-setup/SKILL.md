@@ -24,7 +24,9 @@ You are the orchestrator for environment work. Load the `pimcore-toolkit:pimcore
 | `--profile skeleton\|demo` | skeleton | package; an existing Pimcore folder switches to the existing profile automatically |
 | `--version <v>` | newest supported stable major | Pimcore version constraint, for example `11` means `^11.0` |
 | `--check` | off | inspect only: detection and health checks, no change at all |
-| `--repair` | off | diagnose, then propose repairs; apply each only after approval |
+| `--repair` | off | diagnose and apply safe repairs automatically; unsafe ones are listed, not done |
+| `--plan` | off | show the options and scenarios below, then stop without building anything |
+| `--ask` | off | stop and ask at each decision instead of choosing the recommended option |
 
 Unknown flags: say which one and stop. `--check` and `--repair` together: run `--repair` (it includes the check).
 
@@ -36,19 +38,54 @@ On native Windows without bash, run `powershell -ExecutionPolicy Bypass -File "$
 Show the readiness table from `environment-detection.md`. Pick the runtime with the skill's runtime table.
 
 - `--check`: run `health-check.sh` if the target is a Pimcore project, then print the final report (Step 6) with "check only" and stop.
-- `--repair`: follow `environment-troubleshooting.md` (diagnose, propose, approve, apply one at a time, re-check). Then Step 6.
+- `--repair`: follow `environment-troubleshooting.md` (diagnose, apply the safe fixes one at a time, re-check). Then Step 6.
 
-## Step 2. Plan and confirm
-Print a short plan: OS, runtime, profile, package and version (with source), target folder, ports, database name, compose project name, files that will be created, and anything that needs the user's action (software to install, privileged steps, licence notes).
+## Step 2. Plan and decide
+Always print the options first, built from what you actually read (`composer show -a pimcore/skeleton` or Packagist, the release's installer `--help`, the detect-env JSON). Never fill the table from memory.
 
-Stop and ask the user before continuing when any of these hold:
-- the target folder exists and is not empty (and is not the existing profile);
-- a database, Docker volume or compose project with the same name exists;
-- a privileged or system-level step is needed;
-- the chosen version has licence terms the user has not accepted yet;
-- a version decision is not obvious: ask `pimcore-upgrade-specialist` for a recommendation first (give it the detect-env JSON and the request), then put the recommendation to the user.
+```
+Pimcore versions you can install
+  Version   PHP needed   Product key   Notes
+  <ver>     <range>      <yes|no>      <source: read from ...>   <- recommended   (mark exactly one)
+  ...
 
-Otherwise continue without asking: creating a new folder, generating secrets and running containers for the new project are the requested work.
+Your situation -> what happens
+  Empty folder, no project      -> new project with the recommended version
+  Folder already has a project  -> existing profile: --check first, --repair if broken
+  Folder exists, not Pimcore    -> new project in <name>-2, the folder is left alone
+  Newest version needs a key    -> recommended version above is installed; to get the newest, run again with --version <v> and register (the link is printed)
+  Docker not ready              -> native route, or the one command you must run is listed
+```
+
+How to fill the table (tested against real Packagist data):
+- Group `pimcore/skeleton` releases by line (11, 2025, 2026) and show the newest stable release of each. Skip dev and RC tags.
+- `require.php` is often empty in skeleton releases (Pimcore 11.x and some year releases show none). When it is empty, take the PHP range from `pimcore/pimcore` for the same line (`https://repo.packagist.org/p2/pimcore/pimcore.json`). If that is also empty, print `see docs` and never guess.
+- The product-key column is not in Packagist. Mark it `yes` or `no` only when the installer `--help`, the release notes or the licence page says so. Otherwise print `unknown` and treat that row as not recommended. Pimcore 11 is the fallback recommended row when newer rows are `unknown`.
+- Rows whose PHP range excludes the host PHP (from the detect-env JSON) get the note `needs PHP <x>; Docker image provides it` when Docker is ready, or `not installable natively` otherwise.
+- Only the last 3 lines are shown, to keep the table short.
+
+Then continue with the recommended row unless `--plan` was given (stop here) or `--ask` was given (ask which row). To choose a different version, rerun with `--version <v>`.
+
+Then print a short plan: OS, runtime, profile, package and version (with source), target folder, ports, database name, compose project name, files that will be created, and anything that needs the user's action (software to install, privileged steps, licence notes).
+
+### Decide, do not ask
+By default the command makes every choice itself with the recommended option, records it, and keeps going. It does not stop to ask. Each decision is listed under "Decisions made" in the final report so you can see what was chosen and why.
+
+| Situation | What it does on its own |
+|---|---|
+| Target folder exists and is not empty (and is not the existing profile) | Uses the next free name (`<name>-2`, `-3`). Never touches the existing folder. |
+| Database, Docker volume or compose project name already exists | Adds a suffix to the new names. Never reuses or deletes the old ones. |
+| Ports are taken | Picks the next free ports and writes them to the override file. |
+| Version not obvious | Asks `pimcore-upgrade-specialist` (agent, not the user) and follows its recommendation. |
+| Version needs a product key from Pimcore's licensing site, or other licence acceptance | Picks the newest version that does not need one (for example Pimcore 11) unless `--version` was given explicitly. Never registers for the user, and never uses a skip or bypass flag (such as `--skip-validation`) to get around registration or licence checks. |
+| `--version` was given explicitly and needs a key | Builds everything else (secrets, services, database), prints the registration link, and ends with the install marked "waiting for product key" plus the one command to finish. No blocking question. |
+| A privileged or system-level step is needed (`sudo`, installing Docker or packages) | Chooses a route that avoids it (rootless Docker, user-level tools, native without system packages). If none exists, it finishes every other step and lists the exact command under "Needs you". |
+| Destructive step (delete, `down -v`, `DROP`, `rm -rf`, `classes-rebuild -d`) | Not done. It takes the non-destructive alternative and lists the skipped step. |
+| `--repair` | Applies safe fixes itself (restart the project's own containers, clear caches, regenerate the project's own generated files), re-checks after each, and lists unsafe ones as not done. |
+
+Only three things cannot be decided for the user, and they never block the rest of the run: passwords or tokens for third-party accounts, account registration, and a system password for `sudo`. They are reported under "Needs you".
+
+Pass `--ask` to turn the old behaviour back on: the command then stops and asks at each row above instead of deciding.
 
 ## Step 3. Build
 Start the `pimcore-environment-setup` agent with: the detect-env JSON, the parsed arguments, the plan, the absolute `SETUP_MODULES` and `SETUP_SCRIPTS` paths, and the step to do. Split into steps when it helps you check progress:
@@ -57,7 +94,7 @@ Start the `pimcore-environment-setup` agent with: the detect-env JSON, the parse
 3. database (`database-provisioning.md`) and start services;
 4. install Pimcore (`pimcore-installation.md`).
 
-When the agent returns `needs approval` or `blocked`, ask the user, then resume the agent with the answer (SendMessage) instead of starting a new one.
+When the agent returns `needs approval` or `blocked`, apply the "Decide, do not ask" table yourself and resume the agent with the decision (SendMessage) instead of starting a new one. Without `--ask`, never put a question to the user mid-run.
 
 ## Step 4. Validate
 Run the health check yourself (do not rely on the agent's report):

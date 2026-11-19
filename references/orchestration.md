@@ -46,7 +46,7 @@ Agent names are `pimcore-toolkit:<agent>`.
 
 ### Checkpoint before code changes
 - If the user asked only for analysis, design, a review or a plan: stop after that step and report.
-- If the user asked for implementation: show a five-line plan (approach, files, risks, tests) and continue without waiting, unless one of these is true, in which case ask and wait: an open business question, more than one reasonable design with different outcomes, a class definition change on existing data, a destructive data step, a new composer dependency, or work outside the stated scope.
+- If the user asked for implementation: show a five-line plan (approach, files, risks, tests) and continue without waiting. The default is to decide, not ask. For an open business question, more than one reasonable design, a class definition change on existing data, a destructive data step, a new composer dependency or work outside the stated scope, take the recommended and safest option (the additive class change, no destructive step, no new dependency unless required, stay inside the stated scope), and list it under "Decisions made" in the final report with the alternative you did not take. Destructive data steps are never run; they are listed as not done. Pass `--ask` in the request to be asked at these points instead.
 
 ## 4. Validation (before reporting done)
 - The developer reports tier 1 (`php -l`, style tool, static analysis on changed paths, unit tests for the area).
@@ -56,4 +56,4 @@ Agent names are `pimcore-toolkit:<agent>`.
 - The final report lists every command run and its result, and every check that could not run.
 
 ## 5. What an agent returns
-Each agent ends with a short handback: status (done, blocked, needs decision), the key result in a few lines, files changed or files examined, commands run with results, open questions with a recommendation. Long material (full design, full review) stays in the agent's answer; you summarise it for the user.
+Each agent ends with a short handback: status (done, blocked, needs decision), the key result in a few lines, files changed or files examined, commands run with results, open questions with a recommendation. "Commands run" is mandatory: list each command with its result, or write "none" for a read-only agent that ran nothing. If a handback omits it, ask the agent for it before you report. Long material (full design, full review) stays in the agent's answer; you summarise it for the user.

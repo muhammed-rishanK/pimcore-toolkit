@@ -9,6 +9,7 @@ Choose the package and version, create the project, and run the Pimcore installe
 ## Inspect
 - The version request (`--version`). If absent, list the available versions of the package (`composer show -a pimcore/skeleton` in a throwaway container or on the host, or the Packagist metadata) and pick the newest stable release of the newest major the official docs list as supported. Ask `pimcore-upgrade-specialist` (through the orchestrator) when PHP, image or licence questions are not obvious.
 - The licence of the chosen version (see the safety rules).
+- Whether the installer asks for a product key (`pimcore-install --help`, release notes). If it does, follow the Licences rule in `SKILL.md`: pick a version that needs no key, or finish the other steps and report the registration link under "Needs you". Never pass a skip flag for registration.
 - `vendor/bin/pimcore-install --help` in the created project: the options and the `PIMCORE_INSTALL_*` env vars it reads. Pimcore 11 reads, among others, `PIMCORE_INSTALL_ADMIN_USERNAME`, `PIMCORE_INSTALL_ADMIN_PASSWORD`, `PIMCORE_INSTALL_MYSQL_HOST_SOCKET`, `PIMCORE_INSTALL_MYSQL_USERNAME`, `PIMCORE_INSTALL_MYSQL_PASSWORD`, `PIMCORE_INSTALL_MYSQL_DATABASE`, `PIMCORE_INSTALL_MYSQL_PORT` and `PIMCORE_INSTALL_INSTALL_BUNDLES`. Confirm with `--help` for the installed version.
 
 ## Workflow

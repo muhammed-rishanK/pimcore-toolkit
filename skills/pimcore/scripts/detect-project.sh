@@ -37,6 +37,16 @@ out["pimcoreSource"] = "composer.lock" if "pimcore/pimcore" in pkgs else ("compo
 out["symfony"] = pkgs.get("symfony/framework-bundle")
 out["phpRequire"] = (cj.get("require") or {}).get("php")
 out["phpPlatform"] = ((cj.get("config") or {}).get("platform") or {}).get("php")
+# PHP: composer.json may not pin it. Fall back to what Pimcore itself requires, then the CLI.
+_pp = next((x for x in (lock.get("packages", []) + lock.get("packages-dev", [])) if x.get("name") == "pimcore/pimcore"), None)
+out["phpPimcoreConstraint"] = ((_pp or {}).get("require") or {}).get("php")
+try:
+    import subprocess
+    _v = subprocess.run(["php", "-r", "echo PHP_VERSION;"], capture_output=True, text=True, timeout=5).stdout.strip()
+except Exception:
+    _v = ""
+out["phpCli"] = _v or None
+out["phpNote"] = None if (out["phpRequire"] or out["phpPlatform"]) else "composer.json pins no PHP version; use phpPimcoreConstraint as the supported range and phpCli as the host PHP. The app may run a different PHP in Docker."
 out["doctrineOrm"] = pkgs.get("doctrine/orm")
 out["pimcorePackages"] = {k: v for k, v in sorted(pkgs.items()) if k.startswith("pimcore/") and k != "pimcore/pimcore"}
 interesting = ["symfony/messenger", "codeception/codeception", "phpunit/phpunit", "phpstan/phpstan",
