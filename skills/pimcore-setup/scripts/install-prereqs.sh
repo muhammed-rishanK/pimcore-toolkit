@@ -14,6 +14,17 @@ js() { printf '{"status":"%s","note":"%s","command":"%s"}\n' "$1" "$2" "$3"; }
 
 if dock_ok && docker compose version >/dev/null 2>&1; then js ready "" ""; exit 0; fi
 OS="$(uname -s)"
+# Installed but the daemon is stopped: start it, never reinstall.
+if have docker && docker compose version >/dev/null 2>&1; then
+  if [ "$OS" = Darwin ]; then START="open -a Docker"; else START="systemctl enable --now docker"; fi
+  [ "$CHECK" = 1 ] && { js check "Docker is installed but not running" "$START"; exit 0; }
+  if [ "$OS" = Darwin ]; then open -a Docker >/dev/null 2>&1
+  elif [ "$(id -u)" = 0 ]; then systemctl enable --now docker >/dev/null 2>&1
+  elif sudo -n true 2>/dev/null; then sudo -n systemctl enable --now docker >/dev/null 2>&1
+  else js needs_password "Docker is installed but stopped; sudo needs a password, which the plugin never reads" "sudo $START"; exit 2; fi
+  for _ in $(seq 1 24); do { dock_ok || sudo -n docker info >/dev/null 2>&1; } && { js ready "Docker was started" ""; exit 0; }; sleep 5; done
+  js failed "Docker did not become ready" "$START"; exit 1
+fi
 if [ "$OS" = Darwin ]; then
   [ "$CHECK" = 1 ] && { js check "Docker Desktop missing" "brew install --cask docker"; exit 0; }
   if have brew; then

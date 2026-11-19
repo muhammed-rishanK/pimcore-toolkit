@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- `install-prereqs.sh` no longer treats an installed but stopped Docker as missing: it reports and starts it instead of reinstalling.
+
 ## 0.1.3
 
 - Windows: missing WSL2 and Docker Desktop are now installed from one administrator-level script, so Windows shows a single administrator prompt instead of two.
