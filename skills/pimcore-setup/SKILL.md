@@ -27,6 +27,7 @@ You are the orchestrator for environment work. Load the `pimcore-toolkit:pimcore
 | `--repair` | off | diagnose and apply safe repairs automatically; unsafe ones are listed, not done |
 | `--plan` | off | show the options and scenarios below, then stop without building anything |
 | `--secure-admin` | off | use a random admin name and password instead of the local-development default `admin` / `admin` |
+| `--no-install` | off | do not install missing prerequisites (Docker, WSL2); list them under "Needs you" instead |
 | `--ask` | off | stop and ask at each decision instead of choosing the recommended option |
 
 Unknown flags: say which one and stop. `--check` and `--repair` together: run `--repair` (it includes the check).
@@ -87,11 +88,28 @@ By default the command makes every choice itself with the recommended option, re
 | Version not obvious | Asks `pimcore-upgrade-specialist` (agent, not the user) and follows its recommendation. |
 | Version needs a product key from Pimcore's licensing site, or other licence acceptance | Picks the newest version that does not need one (for example Pimcore 11) unless `--version` was given explicitly. Never registers for the user, and never uses a skip or bypass flag (such as `--skip-validation`) to get around registration or licence checks. |
 | `--version` was given explicitly and needs a key | Builds everything else (secrets, services, database), prints the registration link, and ends with the install marked "waiting for product key" plus the one command to finish. No blocking question. |
-| A privileged or system-level step is needed (`sudo`, installing Docker or packages) | Chooses a route that avoids it (rootless Docker, user-level tools, native without system packages). If none exists, it finishes every other step and lists the exact command under "Needs you". |
+| Docker or WSL2 is missing | Installs it itself with `install-prereqs` (see "Install prerequisites" below). Running the command is the user's consent. Skipped only with `--no-install`. |
+| Another privileged step (firewall, hosts file, system settings) | Not done. Finishes every other step and lists the exact command under "Needs you". |
 | Destructive step (delete, `down -v`, `DROP`, `rm -rf`, `classes-rebuild -d`) | Not done. It takes the non-destructive alternative and lists the skipped step. |
 | `--repair` | Applies safe fixes itself (restart the project's own containers, clear caches, regenerate the project's own generated files), re-checks after each, and lists unsafe ones as not done. |
 
-Only three things cannot be decided for the user, and they never block the rest of the run: passwords or tokens for third-party accounts, account registration, and a system password for `sudo`. They are reported under "Needs you".
+Only these cannot be decided for the user, and they never block the rest of the run: passwords or tokens for third-party accounts, account registration, and the operating system's own consent steps (the Windows administrator prompt, a `sudo` password, a restart). The plugin triggers those steps but never types, reads or bypasses them. They are reported under "Needs you".
+
+### Install prerequisites (default, no questions)
+When Docker is the chosen route and it is missing or not running, run the installer yourself instead of printing commands for the user:
+```bash
+# Linux / macOS / WSL2 / Git Bash
+bash "$SETUP_SCRIPTS/install-prereqs.sh"
+# Windows PowerShell
+powershell -ExecutionPolicy Bypass -File "$SETUP_SCRIPTS/install-prereqs.ps1"
+```
+Add `--check` (`-Check`) first if you only need to know what is missing. Read the JSON `status`:
+- `ready`: continue with Step 3.
+- `restart_required` (Windows): WSL2 and Docker Desktop are installed. Tell the user in one line that Windows must restart once (the OS requires it), give the exact command to run again afterwards, and stop. Everything chosen so far is repeatable because nothing was created.
+- `needs_password` (Linux): `sudo` has no passwordless rule. Print the one command from the JSON under "Needs you".
+- `failed`: show the note, then use the native route if possible, otherwise report under "Needs you".
+
+On Windows the installer shows Windows' own administrator prompt once. The user clicks Yes; the plugin cannot and does not click it. With `--no-install`, skip this and list the commands instead.
 
 Pass `--ask` to turn the old behaviour back on: the command then stops and asks at each row above instead of deciding.
 

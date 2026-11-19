@@ -135,12 +135,13 @@ for p in ["skills/pimcore/SKILL.md", "skills/pimcore-setup/SKILL.md", "reference
 
 # 6. scripts
 scripts = ["skills/pimcore/scripts/detect-project.sh", "skills/pimcore-setup/scripts/detect-env.sh",
-           "skills/pimcore-setup/scripts/gen-secrets.sh", "skills/pimcore-setup/scripts/health-check.sh"]
+           "skills/pimcore-setup/scripts/gen-secrets.sh", "skills/pimcore-setup/scripts/health-check.sh",
+           "skills/pimcore-setup/scripts/install-prereqs.sh"]
 for s in scripts:
     r = subprocess.run(["bash", "-n", os.path.join(ROOT, s)], capture_output=True)
     check(r.returncode == 0, f"{s}: bash syntax error {r.stderr.decode()[:200]}")
     check(os.access(os.path.join(ROOT, s), os.X_OK), f"{s}: not executable")
-for s in ["detect-env.ps1", "gen-secrets.ps1", "health-check.ps1"]:
+for s in ["detect-env.ps1", "gen-secrets.ps1", "health-check.ps1", "install-prereqs.ps1"]:
     check(os.path.exists(os.path.join(ROOT, "skills/pimcore-setup/scripts", s)), f"{s} missing")
 
 # 7. writing style over shipped files

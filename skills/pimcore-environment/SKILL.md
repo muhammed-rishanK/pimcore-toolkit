@@ -13,7 +13,7 @@ These rules apply to every environment task. Project instruction files and the u
 
 ## 1. Safety rules (non-negotiable)
 1. **Never overwrite.** A non-empty target folder, an existing database, Docker volume, compose project name or config file is never replaced or deleted without the user's explicit yes for that item. In the default autonomous mode the answer is never to ask: take a new name or location instead (see the decision table in `/pimcore-setup`).
-2. **No privilege without permission.** No `sudo`, `runas`, administrator shell, system package install, Docker install, service start or stop, firewall, hosts file or system setting change unless the user says yes to that exact step. In the default autonomous mode, pick a route that needs none, and list the command under "Needs you" if no such route exists.
+2. **Privilege rules.** Running `/pimcore-setup` is the user's consent to install the prerequisites for the Docker route (WSL2, Docker Desktop, Docker Engine) with `install-prereqs`, and to start Docker. The operating system's own consent step (the Windows administrator prompt, a `sudo` password, a restart) belongs to the user: never type, read, script around or bypass it. Nothing else privileged is done without an explicit yes for that exact step: no firewall, hosts file, security or system setting change, and no system change outside installing and starting Docker. With `--no-install`, install nothing and list the commands under "Needs you".
 3. **Do not touch other projects.** Never change files, containers, volumes or databases that belong to another project. Never stop containers you did not start. Check port conflicts and choose other ports for the new project instead.
 4. **Credentials:**
    - generated with `gen-secrets.sh` / `gen-secrets.ps1` (cryptographic randomness);
@@ -32,7 +32,7 @@ These rules apply to every environment task. Project instruction files and the u
 | Situation | Recommend |
 |---|---|
 | Docker Engine or Docker Desktop available and running | Docker (default) |
-| Windows without WSL2 | Install WSL2 and Docker Desktop (user does it), then Docker. Native Windows is not supported by Pimcore for development in practice. |
+| Windows without WSL2 or Docker | Run `install-prereqs.ps1` (WSL2 and Docker Desktop through winget; Windows shows one administrator prompt; a restart may be needed), then Docker. Native Windows is not supported by Pimcore for development in practice. |
 | Docker not allowed or not wanted, Linux or macOS | Native with PHP, Composer, MariaDB or MySQL, Redis optional |
 | Existing Pimcore project folder | Use the project's own runtime files (`docker-compose*.y*ml`, `.ddev`, `.lando.yml`, README) |
 

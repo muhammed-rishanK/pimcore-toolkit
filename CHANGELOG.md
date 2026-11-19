@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2
+
+- `/pimcore-setup` now installs missing prerequisites itself instead of printing commands: WSL2 and Docker Desktop on Windows (winget), Docker Engine on Linux (passwordless sudo), Docker Desktop on macOS (Homebrew). New scripts `install-prereqs.sh` and `install-prereqs.ps1`.
+- The operating system's own consent steps (Windows administrator prompt, `sudo` password, restart) are still the user's: the plugin triggers them but never types, reads or bypasses them. After a Windows restart, run the same command again.
+- New flag `--no-install` skips installing and lists the commands instead.
+- Windows scripts are untested on a real Windows machine; please report problems as issues.
+
 ## 0.1.1
 
 - `/pimcore-setup` now builds a local developer setup by default: admin login `admin` / `admin`, random database passwords, and every published port bound to `127.0.0.1`. If a port cannot bind to localhost, it falls back to a random login. Use `--secure-admin` for a random admin name and password. Never use the dev login on a server or shared host.
