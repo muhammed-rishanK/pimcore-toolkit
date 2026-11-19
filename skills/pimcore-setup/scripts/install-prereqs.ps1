@@ -2,7 +2,8 @@
 # Usage: install-prereqs.ps1 [-Check]
 #   -Check   report what is missing and what would be installed; change nothing
 # Uses winget. Windows shows its own administrator (UAC) prompt for the install; that
-# prompt belongs to Windows and is never bypassed. A restart may be required.
+# prompt belongs to Windows and is never bypassed. Everything missing is installed from one
+# administrator script, so there is only one prompt. A restart may be required.
 # Output: one JSON object. status is one of: ready, restart_required, failed.
 param([switch]$Check)
 $ErrorActionPreference = 'Continue'
@@ -28,23 +29,38 @@ if (-not (Has winget)) {
     exit 1
 }
 
-if ($needWsl) {
-    # wsl --install needs elevation; Start-Process -Verb RunAs shows the normal Windows prompt.
-    try {
-        $p = Start-Process -FilePath wsl.exe -ArgumentList '--install', '--no-distribution' -Verb RunAs -Wait -PassThru
-        $steps += "wsl --install --no-distribution (exit $($p.ExitCode))"
-        $status = 'restart_required'
-        $note = 'WSL2 was installed. Windows needs a restart before Docker can use it.'
-    } catch {
-        $status = 'failed'; $note = 'The administrator prompt was declined or WSL install failed: ' + $_.Exception.Message
+if ($needWsl -or $needDocker) {
+    # One administrator PowerShell does every missing install, so Windows shows a single administrator prompt.
+    $tmp = Join-Path $env:TEMP ('pimcore-prereqs-' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $tmp | Out-Null
+    $resultFile = Join-Path $tmp 'result.json'
+    $lines = @('$r = @{ steps = @(); failed = $false; note = "" }')
+    if ($needWsl) {
+        $lines += '$p = Start-Process -FilePath wsl.exe -ArgumentList "--install","--no-distribution" -Wait -PassThru -WindowStyle Hidden'
+        $lines += '$r.steps += "wsl --install --no-distribution (exit $($p.ExitCode))"'
     }
-}
-
-if ($status -ne 'failed' -and $needDocker) {
-    winget install -e --id Docker.DockerDesktop --accept-package-agreements --accept-source-agreements --silent | Out-Null
-    $steps += "winget install Docker.DockerDesktop (exit $LASTEXITCODE)"
-    if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne -1978335189) { $status = 'failed'; $note = 'Docker Desktop install did not finish (winget exit ' + $LASTEXITCODE + ').' }
-    elseif ($status -ne 'restart_required') { $status = 'restart_required'; $note = 'Docker Desktop was installed. Restart Windows once, then run the same command again.' }
+    if ($needDocker) {
+        $lines += 'winget install -e --id Docker.DockerDesktop --accept-package-agreements --accept-source-agreements --silent | Out-Null'
+        $lines += '$r.steps += "winget install Docker.DockerDesktop (exit $LASTEXITCODE)"'
+        $lines += 'if ($LASTEXITCODE -ne 0 -and $LASTEXITCODE -ne -1978335189) { $r.failed = $true; $r.note = "Docker Desktop install did not finish (winget exit $LASTEXITCODE)." }'
+    }
+    $lines += ('$r | ConvertTo-Json -Compress | Set-Content -Path "' + $resultFile + '"')
+    $scriptFile = Join-Path $tmp 'admin-steps.ps1'
+    $lines | Set-Content -Path $scriptFile
+    try {
+        Start-Process -FilePath powershell.exe -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $scriptFile -Verb RunAs -Wait -WindowStyle Hidden
+    } catch {
+        $status = 'failed'; $note = 'The administrator prompt was declined: ' + $_.Exception.Message
+    }
+    if ($status -ne 'failed') {
+        if (Test-Path $resultFile) {
+            $res = Get-Content $resultFile -Raw | ConvertFrom-Json
+            $steps += $res.steps
+            if ($res.failed) { $status = 'failed'; $note = $res.note }
+            else { $status = 'restart_required'; $note = 'Prerequisites were installed. Restart Windows once, then run the same command again.' }
+        } else { $status = 'failed'; $note = 'The administrator install produced no result.' }
+    }
+    Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
 }
 
 if ($status -eq 'ready') {

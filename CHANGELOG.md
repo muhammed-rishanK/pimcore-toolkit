@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Windows: missing WSL2 and Docker Desktop are now installed from one administrator-level script, so Windows shows a single administrator prompt instead of two.
+
 ## 0.1.2
 
 - `/pimcore-setup` now installs missing prerequisites itself instead of printing commands: WSL2 and Docker Desktop on Windows (winget), Docker Engine on Linux (passwordless sudo), Docker Desktop on macOS (Homebrew). New scripts `install-prereqs.sh` and `install-prereqs.ps1`.
