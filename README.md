@@ -27,6 +27,34 @@ Update to the latest version with `claude plugin marketplace update pimcore-tool
 
 Type `/pimcore` or `/pimcore-setup` to check that the commands are available.
 
+## Quick start
+
+Your first command depends on where you start.
+
+**You have no Pimcore project yet.** Open an empty folder in Claude Code and run:
+
+```text
+/pimcore-setup my-shop
+```
+
+It detects your OS and installed tools, shows a plan and asks before anything risky. It then creates the project, generates secrets (never printed), starts the services, installs Pimcore and runs five health checks. The final report lists the URLs, the admin username and the command that reads the password.
+
+**You already have a Pimcore project.** Run this inside the project. It changes nothing and reports what is healthy and what is broken:
+
+```text
+/pimcore-setup --check
+```
+
+If something is broken, `/pimcore-setup --repair` diagnoses it and applies each fix only after you approve it.
+
+**Once the environment is healthy**, develop with `/pimcore`:
+
+```text
+/pimcore explain how Product objects get their prices
+```
+
+Useful `/pimcore-setup` options: `--runtime docker|native`, `--profile skeleton|demo`, `--version 11`, `--dir <path>`, `--check`, `--repair`.
+
 ## Usage examples
 
 ```text
