@@ -171,6 +171,14 @@ For the routing scenarios, see `tests/scenarios.md`.
 - The quality of the agents depends on the project. A project with no tests or static analysis gets weaker validation, and the report says so.
 - Future work: **`/pimcore-doctor`**, a read-only health and best-practice audit of an existing project. It would cover configuration, class definitions, workers, caches, indexes, security headers and deprecated API use, and would reuse `health-check` and the code-review module.
 
+## Feedback and issues
+
+- **Bug or problem:** open an issue at https://github.com/muhammed-rishanK/pimcore-toolkit/issues. Include the plugin version (see `CHANGELOG.md`), your OS, the Pimcore and PHP versions, the command you ran and what happened. Remove passwords, tokens and private project names first.
+- **Idea or question:** open an issue and say it is a suggestion or a question.
+- **Liked it?** A star on the repository helps others find it.
+
+The plugin sends no usage data. This repository is the only place to reach the author.
+
 ## License
 
 MIT, see `LICENSE`.
