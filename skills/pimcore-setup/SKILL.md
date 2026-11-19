@@ -26,6 +26,7 @@ You are the orchestrator for environment work. Load the `pimcore-toolkit:pimcore
 | `--check` | off | inspect only: detection and health checks, no change at all |
 | `--repair` | off | diagnose and apply safe repairs automatically; unsafe ones are listed, not done |
 | `--plan` | off | show the options and scenarios below, then stop without building anything |
+| `--secure-admin` | off | use a random admin name and password instead of the local-development default `admin` / `admin` |
 | `--ask` | off | stop and ask at each decision instead of choosing the recommended option |
 
 Unknown flags: say which one and stop. `--check` and `--repair` together: run `--repair` (it includes the check).
@@ -67,6 +68,13 @@ How to fill the table (tested against real Packagist data):
 Then continue with the recommended row unless `--plan` was given (stop here) or `--ask` was given (ask which row). To choose a different version, rerun with `--version <v>`.
 
 Then print a short plan: OS, runtime, profile, package and version (with source), target folder, ports, database name, compose project name, files that will be created, and anything that needs the user's action (software to install, privileged steps, licence notes).
+
+### Local developer setup (the default)
+`/pimcore-setup` builds a local development environment, not a server. Unless `--secure-admin` is given, it:
+- creates the admin user `admin` with password `admin` (`gen-secrets` with `--dev-login`); database passwords stay random;
+- publishes every port on `127.0.0.1` only, so the stack and its `admin` login cannot be reached from the network (this is required, not optional: if it cannot bind to localhost, it switches to a random admin login instead);
+- uses development settings (`APP_ENV=dev`) and the Docker route when Docker is ready.
+Never use the dev login when the target is a server, a shared machine, a cloud host or anything reachable from outside. The report shows `admin / admin` as the login and says it is for local development only. Pimcore's admin UI requires 10 or more characters for any password change, so change it there if you ever want a different one.
 
 ### Decide, do not ask
 By default the command makes every choice itself with the recommended option, records it, and keeps going. It does not stop to ask. Each decision is listed under "Decisions made" in the final report so you can see what was chosen and why.

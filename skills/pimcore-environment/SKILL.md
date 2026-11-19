@@ -17,7 +17,7 @@ These rules apply to every environment task. Project instruction files and the u
 3. **Do not touch other projects.** Never change files, containers, volumes or databases that belong to another project. Never stop containers you did not start. Check port conflicts and choose other ports for the new project instead.
 4. **Credentials:**
    - generated with `gen-secrets.sh` / `gen-secrets.ps1` (cryptographic randomness);
-   - never `admin/admin`, `pimcore/pimcore`, `ROOT`, `password` or any other predictable value;
+   - never `pimcore/pimcore`, `ROOT`, `password` or any other predictable value for the database or any service. The one exception is the local-development admin login `admin` / `admin` that `/pimcore-setup` uses by default (`gen-secrets --dev-login`), and only while every published port is bound to `127.0.0.1`. With `--secure-admin`, or when localhost binding is not possible, the admin login is random too;
    - stored only in `<project>/.pimcore-setup/secrets.env` (owner-only permissions) and in files Pimcore itself writes (`config/local/database.yaml`);
    - both locations git-ignored before the first `git add` anyone could run;
    - never printed, echoed, logged, put on a command line, in a URL, in the final report or in a commit;

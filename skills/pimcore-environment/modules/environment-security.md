@@ -11,13 +11,14 @@ Generate, store, use and hand over credentials for a new environment without exp
 - Does `.pimcore-setup/secrets.env` already exist? If so, reuse it; never regenerate over it (the database volume may already use those values).
 
 ## Workflow
-1. **Generate**: `bash "$SETUP_SCRIPTS/gen-secrets.sh" <project> [--compose] [--db-name <n>] [--db-user <u>] [--admin-user <a>]` (PowerShell: `gen-secrets.ps1`). It:
+1. **Generate**: `bash "$SETUP_SCRIPTS/gen-secrets.sh" <project> --dev-login [--compose] [--db-name <n>] [--db-user <u>] [--admin-user <a>]` (leave out `--dev-login` only when `--secure-admin` was requested or ports cannot be bound to localhost) (PowerShell: `gen-secrets.ps1`). It:
    - uses `/dev/urandom` (or `openssl rand`; PowerShell: `RandomNumberGenerator`) for 24+ character passwords from a safe alphabet, and a random admin user name (`admin_<6 random chars>`) unless one is given;
    - writes `.pimcore-setup/secrets.env` with mode 600 (folder 700), keys: `PIMCORE_INSTALL_ADMIN_USERNAME`, `PIMCORE_INSTALL_ADMIN_PASSWORD`, `PIMCORE_INSTALL_MYSQL_HOST_SOCKET`, `PIMCORE_INSTALL_MYSQL_PORT`, `PIMCORE_INSTALL_MYSQL_DATABASE`, `PIMCORE_INSTALL_MYSQL_USERNAME`, `PIMCORE_INSTALL_MYSQL_PASSWORD`, `DB_ROOT_PASSWORD`;
    - with `--compose`, writes `docker-compose.override.yaml` (mode 600) setting the database service's root password, database, user and password, and the uid:gid for PHP services on Linux;
    - adds the ignore rules to `.gitignore` (creates it if missing);
    - refuses to overwrite an existing secrets file or override and exits non-zero;
    - prints only file paths and key names, never values.
+   - with `--dev-login` (the default for `/pimcore-setup`): the admin user is `admin` with password `admin`, database passwords stay random, and the report states that this login is for local development only. The script prints a reminder to keep ports on `127.0.0.1`.
 2. **Use**: load values inside a subshell from the file (`set -a; . file; set +a`) or pipe the file to stdin of the container command. Never place a value in an argument.
 3. **Hand over**: tell the user where the admin credentials are and how to read them themselves:
    - Linux, macOS, WSL2: `grep ADMIN .pimcore-setup/secrets.env`
@@ -30,10 +31,10 @@ Generate, store, use and hand over credentials for a new environment without exp
 ## Best practices
 - Owner-only permissions on Linux and macOS; on Windows, `icacls` to remove inherited access for other users (the PowerShell script does this).
 - Keep secrets out of shell history: no `export X=...` lines typed in an interactive shell.
-- Bind published ports to `127.0.0.1` where the compose file allows it, so the dev stack is not reachable from the network.
+- Bind published ports to `127.0.0.1` so the dev stack is not reachable from the network. This is mandatory when the `admin` / `admin` dev login is used. If a port cannot be bound to localhost, use a random admin login instead.
 
 ## Common mistakes
-- Using the default skeleton credentials because "it is only local".
+- Using `admin` / `admin` on a port that is reachable from the network, or on any server, shared host or cloud machine.
 - Printing `cat secrets.env` to check it worked.
 - Committing `docker-compose.override.yaml`.
 - Regenerating secrets after the DB volume was created, which locks the app out.

@@ -19,11 +19,11 @@ Create and run a Pimcore project with Docker the way the official skeleton and d
      composer create-project pimcore/skeleton:<constraint> <name>
    ```
    On Windows PowerShell with Docker Desktop, omit `-u` and use `${PWD}`. On macOS, `-u` is optional.
-3. **Secure the project before starting it**: run `gen-secrets.sh <project> --compose` (see `environment-security.md`). It writes `.pimcore-setup/secrets.env` and `docker-compose.override.yaml` (both git-ignored, owner-only) with:
+3. **Secure the project before starting it**: run `gen-secrets.sh <project> --dev-login --compose` (see `environment-security.md`). It writes `.pimcore-setup/secrets.env` and `docker-compose.override.yaml` (both git-ignored, owner-only) with:
    - random database root and user passwords and a random admin user and password;
    - your host uid:gid for the PHP and supervisord services on Linux (the skeleton ships these `user:` lines commented out);
    - nothing else. Compose loads the override automatically.
-4. **Ports**: the skeleton publishes nginx on host port 80. If 80 is used, change that one mapping in the new project's `docker-compose.yaml` to a free port (for example `"8080:80"`). This is the new project's own file, so editing it is fine; say so in the report. Do not publish the database port unless the user wants host access.
+4. **Ports**: the skeleton publishes nginx on host port 80. If 80 is used, change that one mapping in the new project's `docker-compose.yaml` to a free port (for example `"8080:80"`). This is the new project's own file, so editing it is fine; say so in the report. Bind every published port to `127.0.0.1` (for example `"127.0.0.1:8080:80"`) because the default admin login is `admin` / `admin`. Do not publish the database port unless the user wants host access.
 5. **Compose project name**: defaults to the folder name. Check `docker compose ls` and `docker volume ls` for clashes first; if a clash exists, stop and ask.
 6. **Start**: `docker compose up -d`, then `docker compose ps` until services are running and the database accepts connections (`docker compose exec -T db mariadb-admin ping` or `mysqladmin ping` with the image's tool; read the compose healthcheck if present).
 7. **Install Pimcore** with `pimcore-installation.md`.

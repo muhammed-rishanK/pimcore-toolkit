@@ -23,7 +23,14 @@ claude plugin install pimcore-toolkit@pimcore-toolkit
 
 To try a local copy for one session: `claude --plugin-dir /path/to/pimcore-toolkit`.
 
-Update to the latest version with `claude plugin marketplace update pimcore-toolkit`.
+Update to the latest version:
+
+```bash
+claude plugin marketplace update pimcore-toolkit
+claude plugin update pimcore-toolkit@pimcore-toolkit
+```
+
+Then run `/reload-plugins`. See `CHANGELOG.md` for what changed.
 
 Type `/pimcore` or `/pimcore-setup` to check that the commands are available.
 
@@ -55,7 +62,7 @@ If something is broken, `/pimcore-setup --repair` diagnoses it and applies each 
 
 Run `/pimcore-setup --plan` to see which versions can be installed (with PHP needs and whether a product key is required) and what happens in each situation, without building anything. A normal run prints the same table, installs the recommended row and records the choice.
 
-Useful `/pimcore-setup` options: `--plan`, `--ask`, `--runtime docker|native`, `--profile skeleton|demo`, `--version 11`, `--dir <path>`, `--check`, `--repair`.
+Useful `/pimcore-setup` options: `--plan`, `--ask`, `--secure-admin`, `--runtime docker|native`, `--profile skeleton|demo`, `--version 11`, `--dir <path>`, `--check`, `--repair`.
 
 ## Usage examples
 
@@ -127,7 +134,7 @@ Claude Code discovers skills only one level deep (`skills/<name>/SKILL.md`). The
 
 ### Setup security
 
-- `gen-secrets` creates random credentials. The admin username gets a random suffix and there is never an `admin/admin`. They are written to `.pimcore-setup/secrets.env` with mode 600, and the compose credentials go to `docker-compose.override.yaml` with mode 600. Both files are git-ignored, and existing files are never overwritten.
+- By default `/pimcore-setup` builds a local developer setup: the admin login is `admin` / `admin`, the database passwords are random, and every published port is bound to `127.0.0.1` so nothing is reachable from the network. Use `--secure-admin` for a random admin name and password, and never use the dev login on a server or shared host. Otherwise `gen-secrets` creates random credentials with a random admin suffix. They are written to `.pimcore-setup/secrets.env` with mode 600, and the compose credentials go to `docker-compose.override.yaml` with mode 600. Both files are git-ignored, and existing files are never overwritten.
 - The installer reads the secrets from stdin, so they never appear in command lines, logs or the report. You read the admin login yourself with `grep ADMIN .pimcore-setup/secrets.env`.
 - The five health checks: installation completed, database initialised (tables and an admin user), application healthy, admin login reachable, optional services (workers, Redis, search).
 
