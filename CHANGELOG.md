@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.1.0
+
+- New read-only impact scan, `skills/pimcore/scripts/scan-platform-impact.sh <project> [--to 12|2024|2025|2026] [--format table|json]`. For each documented breaking-change item it lists every matching `file:line` in the project, marks each rule `documented` or `heuristic`, links the official source, and names the rules that did not match. It skips `vendor/`, `var/`, `node_modules/` and `.git/` and never changes anything.
+- The rules are data in `skills/pimcore/scripts/platform-impact-rules.json`, so a new breaking change is a new entry, not a script edit. 59 rules in three cumulative steps: `2024` (7, deprecations in 11.5 and 2024.x), `2025` (35, Pimcore 12 and 2025.x, including the licence and bundle-split items) and `2026` (17, Studio-only platform). `--to 12` is an alias for `2025`.
+- Bundle rules use Packagist names that were checked (admin-ui-classic-bundle, advanced-object-search, newsletter-bundle, web-to-print-bundle, studio-ui-bundle and others). Bundles whose name could not be confirmed are matched by namespace and marked `heuristic`.
+- `references/pimcore-versions.md` now records the platform to core mapping (2024.4 = 11.5.x, 2025.1 to 2025.4 = 12.0 to 12.3) and the 2024.4 LTS date (December 2026). Sources: Packagist conflict ranges and the docs Platform Versions, Upgrade Notes and "Version 11 to Version 12" pages, checked 2026-11-20.
+- Fixed: running the scanner with a relative script path failed with "platform-impact-rules.json missing". The script directory is now resolved before changing into the project.
+- The upgrade specialist, `platform-2026-upgrade.md` and Workflow F in `references/orchestration.md` now start from the scan instead of ad-hoc grepping.
+- Limits, stated in the script output: only items in the rules file are checked, and the scan is not a PHP deprecation report (use PHPStan deprecation rules or the Symfony deprecation log for deprecated calls). The 2024.x, 2025.x and 11 to 12 items were read from fetched summaries of the official pages, and the per-bundle upgrade notes were not read, so confirm identifiers against `vendor/` or the linked page.
+- Tests: rules file validation and fixture projects (matching, clean, bad argument, `vendor/` skipped).
+
+## 1.0.1
+
+- Fixed the Pimcore 12 install command. `pimcore/skeleton` has no `12` tag, so `--version 12` finds nothing. Pimcore 12 is installed with `--version 2025.4` (skeleton 2025.4 requires `pimcore/pimcore ^12.3` and the Classic UI); `--version 2026` installs Studio only. Source: Packagist metadata, checked 2026-11-20.
+- `references/pimcore-versions.md` now records the 12.x to 2025.x mapping and the PHP range (8.3 or 8.4) for 12.x and 2025.4.
+- `/pimcore-setup` shows the `pimcore/pimcore` line each skeleton release requires, and stops with the list of real skeleton lines when `--version` matches none, instead of guessing.
+
 ## 1.0.0
 
 Pimcore 12, the 2025.4 LTS and Pimcore Studio are now covered. Facts come from the official docs and are listed with sources in `references/pimcore-versions.md`. Where the docs say nothing (licence and product key changes, the mapping of 12.x to 2025 tags), the toolkit says "not stated".

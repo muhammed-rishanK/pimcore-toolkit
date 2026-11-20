@@ -42,7 +42,7 @@ Agent names are `pimcore-toolkit:<agent>`.
 
 **E. Code review.** `pimcore-code-reviewer` on the diff the user named (default: `git diff` plus staged plus untracked files against the current branch base). Start QA only when a finding needs runtime proof. **E'** is the testing-only variant: `pimcore-qa-engineer` alone.
 
-**F. Upgrade.** (1) `pimcore-upgrade-specialist`: current versions, target, breaking changes, dependency and bundle compatibility, plan, rollback. For 2025.4 or 2026 targets it reads `platform-2026-upgrade.md` and `references/pimcore-versions.md`, and the project's `adminUi`, `releaseLine` and `notes` from `detect-project.sh`. (2) Architect turns it into phases. (3) Stop and report. Executing a major upgrade needs the user's explicit go-ahead in this conversation; then developer, QA and reviewer phase by phase.
+**F. Upgrade.** (1) `pimcore-upgrade-specialist`: current versions, target, breaking changes, dependency and bundle compatibility, plan, rollback. For 2025.4 or 2026 targets it reads `platform-2026-upgrade.md` and `references/pimcore-versions.md`, and the project's `adminUi`, `releaseLine` and `notes` from `detect-project.sh`. It also runs `scripts/scan-platform-impact.sh <project> --to <12|2024|2025|2026> --format json` (read-only) and builds the breaking-change list from its findings, one file list per item, instead of grepping by hand. (2) Architect turns it into phases. (3) Stop and report. Executing a major upgrade needs the user's explicit go-ahead in this conversation; then developer, QA and reviewer phase by phase.
 
 **G. Release.** Use `deployment-release`: produce the deployment checklist from the diff (migrations, class rebuilds, cache, workers, config, rollback).
 

@@ -2,7 +2,7 @@
   "name": "pimcore-toolkit",
   "displayName": "Pimcore Engineering Toolkit",
   "description": "Version-aware Pimcore engineering toolkit for Pimcore 10, 11, 12, the 2025.4 LTS and 2026 with Pimcore Studio. /pimcore routes development work (analysis, architecture, data modelling, implementation, debugging, integrations, testing, review, upgrades) to the right specialist. /pimcore-setup builds a working Pimcore environment on Linux, macOS, Windows and WSL2, Docker first.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "keywords": [
     "pimcore",
     "symfony",

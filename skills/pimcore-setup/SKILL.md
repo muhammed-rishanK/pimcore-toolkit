@@ -1,7 +1,7 @@
 ---
 name: pimcore-setup
 description: "Creates, checks or repairs a local Pimcore development environment on Linux, macOS, WSL2 or Windows. Docker first, native supported; skeleton, demo or existing-project profiles; generated credentials that are never printed; five-level health checks and a final setup report. Use when the user runs /pimcore-setup."
-argument-hint: "[name] [--dir <path>] [--runtime docker|native] [--profile skeleton|demo] [--version 11] [--check] [--repair]"
+argument-hint: "[name] [--dir <path>] [--runtime docker|native] [--profile skeleton|demo] [--version 11|2025.4|2026] [--check] [--repair]"
 disable-model-invocation: true
 ---
 
@@ -22,7 +22,7 @@ You are the orchestrator for environment work. Load the `pimcore-toolkit:pimcore
 | `--dir <path>` | `./<name>` | target folder; for the existing profile, the project folder |
 | `--runtime docker\|native` | docker, if ready | runtime |
 | `--profile skeleton\|demo` | skeleton | package; an existing Pimcore folder switches to the existing profile automatically |
-| `--version <v>` | newest supported stable major | Pimcore version constraint, for example `11` means `^11.0` |
+| `--version <v>` | newest supported stable major | skeleton version constraint, for example `11` means `^11.0`. The skeleton has no `12` tag: Pimcore 12 is `2025.4` (installs `pimcore/pimcore ^12.3`, the LTS) and Studio only is `2026`. Check with `composer show -a pimcore/skeleton` before you pass a value. |
 | `--check` | off | inspect only: detection and health checks, no change at all |
 | `--repair` | off | diagnose and apply safe repairs automatically; unsafe ones are listed, not done |
 | `--plan` | off | show the options and scenarios below, then stop without building anything |
@@ -60,7 +60,7 @@ Your situation -> what happens
 ```
 
 How to fill the table (tested against real Packagist data):
-- Group `pimcore/skeleton` releases by line (11, 2025, 2026) and show the newest stable release of each. Skip dev and RC tags.
+- Group `pimcore/skeleton` releases by line (11, 2025, 2026) and show the newest stable release of each. Add the `pimcore/pimcore` line it requires from the skeleton's `require` (for example skeleton 2025.4 requires `^12.3`), so the user can see that 2025.4 is Pimcore 12. A `--version` that matches no skeleton tag (for example `12`) is not guessed: say which skeleton lines exist and stop. Skip dev and RC tags.
 - `require.php` is often empty in skeleton releases (Pimcore 11.x and some year releases show none). When it is empty, take the PHP range from `pimcore/pimcore` for the same line (`https://repo.packagist.org/p2/pimcore/pimcore.json`). If that is also empty, print `see docs` and never guess.
 - The product-key column is not in Packagist. Mark it `yes` or `no` only when the installer `--help`, the release notes or the licence page says so. Otherwise print `unknown` and treat that row as not recommended. Pimcore 11 is the fallback recommended row when newer rows are `unknown`.
 - Rows whose PHP range excludes the host PHP (from the detect-env JSON) get the note `needs PHP <x>; Docker image provides it` when Docker is ready, or `not installable natively` otherwise.

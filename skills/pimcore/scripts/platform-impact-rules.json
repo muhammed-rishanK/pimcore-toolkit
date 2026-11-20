@@ -1,0 +1,998 @@
+{
+  "version": 2,
+  "note": "Rules for scan-platform-impact.sh. A rule lists where a documented breaking change shows up in project source. Steps: 2024 (deprecated in 11.5 and 2024.x), 2025 (Pimcore 12 and 2025.x), 2026 (2026.x). Confidence 'documented' means the class, package or option is named in the official upgrade notes; 'heuristic' means a search term chosen by the toolkit that can match unrelated code. Add rules here, not in the script.",
+  "steps": [
+    "2024",
+    "2025",
+    "2026"
+  ],
+  "rules": [
+    {
+      "id": "twig-pimcore-block",
+      "step": "2024",
+      "title": "Twig function pimcore_block (deprecated, removed in 12)",
+      "kind": "grep",
+      "files": [
+        "twig",
+        "php"
+      ],
+      "patterns": [
+        "\\bpimcore_block\\b"
+      ],
+      "confidence": "documented",
+      "advice": "Replace with pimcoreblock or pimcoremanualblock. The old name is deprecated in 11.5 and gone in 12.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "twig-pimcore-cache",
+      "step": "2024",
+      "title": "Twig function pimcore_cache (deprecated, removed in 12)",
+      "kind": "grep",
+      "files": [
+        "twig",
+        "php"
+      ],
+      "patterns": [
+        "\\bpimcore_cache\\b"
+      ],
+      "confidence": "documented",
+      "advice": "Replace with pimcorecache. The old name is deprecated in 11.5 and gone in 12.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "locale-service",
+      "step": "2024",
+      "title": "LocaleService and the pimcore.locale service (deprecated)",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml",
+        "twig"
+      ],
+      "patterns": [
+        "\\bLocaleService\\b",
+        "\\bpimcore\\.locale\\b"
+      ],
+      "confidence": "documented",
+      "advice": "Use the Symfony locale handling that the upgrade notes name. Check each match: only Pimcore's own LocaleService is affected.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "document-renderer",
+      "step": "2024",
+      "title": "DocumentRenderer (deprecated)",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "\\bDocumentRenderer\\b"
+      ],
+      "confidence": "documented",
+      "advice": "Look up the replacement in the upgrade notes for your target before rewriting the call.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "upload-target-event",
+      "step": "2024",
+      "title": "ResolveUploadTargetEvent context (deprecated in 11.5, removed in 12)",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "ResolveUploadTargetEvent"
+      ],
+      "confidence": "documented",
+      "advice": "The context property on this event is removed in 12. Read the target from the event's remaining properties.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "date-editable-format",
+      "step": "2024",
+      "title": "Date editable outputFormat (deprecated, replaced by outputIsoFormat in 12)",
+      "kind": "grep",
+      "files": [
+        "twig",
+        "php"
+      ],
+      "patterns": [
+        "\\boutputFormat\\b"
+      ],
+      "confidence": "heuristic",
+      "advice": "The date editable option outputFormat is replaced by outputIsoFormat. The word also appears in unrelated code, so check each match.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "tinymce-wysiwyg",
+      "step": "2024",
+      "title": "TinyMCE as the WYSIWYG editor",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml",
+        "twig",
+        "js"
+      ],
+      "patterns": [
+        "(?i)tinymce"
+      ],
+      "confidence": "heuristic",
+      "advice": "TinyMCE is for Professional and Enterprise, or through pimcore/tinymce-bundle. Community projects use pimcore/quill-bundle. Check which applies to the licence you hold.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "dbal-v3",
+      "step": "2025",
+      "title": "doctrine/dbal 3.x constraint (v4 is the supported line)",
+      "kind": "composer-constraint",
+      "paths": [
+        [
+          "require",
+          "doctrine/dbal"
+        ]
+      ],
+      "patterns": [
+        "(^|[^0-9.])3\\."
+      ],
+      "confidence": "documented",
+      "advice": "Pimcore 12 supports doctrine/dbal 4 and drops 3. Check custom SQL code for the v4 API.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Updating_Pimcore/V11_to_V12"
+    },
+    {
+      "id": "orm-2",
+      "step": "2025",
+      "title": "doctrine/orm 2.x constraint (ORM 3 is supported)",
+      "kind": "composer-constraint",
+      "paths": [
+        [
+          "require",
+          "doctrine/orm"
+        ]
+      ],
+      "patterns": [
+        "(^|[^0-9.])2\\."
+      ],
+      "confidence": "heuristic",
+      "advice": "The upgrade notes name doctrine/orm 3. Check entity mappings and the EntityManager setup (default manager with the default connection, or a bundle manager with its own connection, never mixed).",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Updating_Pimcore/V11_to_V12"
+    },
+    {
+      "id": "dbal4-total-count",
+      "step": "2025",
+      "title": "getTotalCount( calls (DBAL 4 impact)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "->getTotalCount\\("
+      ],
+      "confidence": "heuristic",
+      "advice": "The upgrade notes list getTotalCount( under the DBAL 4 changes. Check each call against the new API.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Updating_Pimcore/V11_to_V12"
+    },
+    {
+      "id": "gotenberg-v1",
+      "step": "2025",
+      "title": "gotenberg-php 1.x (only v2 is supported)",
+      "kind": "composer-constraint",
+      "paths": [
+        [
+          "require",
+          "gotenberg/gotenberg-php"
+        ]
+      ],
+      "patterns": [
+        "(^|[^0-9.])1\\."
+      ],
+      "confidence": "documented",
+      "advice": "The Headless Chrome PDF processor is removed. Web to Print uses gotenberg-php v2 only.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Updating_Pimcore/V11_to_V12"
+    },
+    {
+      "id": "headless-chrome",
+      "step": "2025",
+      "title": "Headless Chrome or Chromium PDF processor",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml",
+        "docker",
+        "shell"
+      ],
+      "patterns": [
+        "HeadlessChrome",
+        "(?i)headless[_-]?chrome",
+        "(?i)\\bchromium\\b"
+      ],
+      "confidence": "heuristic",
+      "advice": "The Headless Chrome processor is removed. Move PDF rendering to Gotenberg and update Docker images that install Chromium.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "authenticator-manager",
+      "step": "2025",
+      "title": "enable_authenticator_manager in security config",
+      "kind": "grep",
+      "files": [
+        "yaml"
+      ],
+      "patterns": [
+        "enable_authenticator_manager"
+      ],
+      "confidence": "documented",
+      "advice": "Remove the key from security.yaml. It no longer exists.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Updating_Pimcore/V11_to_V12"
+    },
+    {
+      "id": "doctrine-annotations",
+      "step": "2025",
+      "title": "Doctrine annotations and annotation routes (doctrine/annotations removed in 12.3)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "use\\s+Doctrine\\\\Common\\\\Annotations",
+        "@Route\\(",
+        "Symfony\\\\Component\\\\Routing\\\\Annotation\\\\Route"
+      ],
+      "confidence": "documented",
+      "advice": "Use PHP 8 attributes (#[Route(...)]) instead of annotations.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "db-helper",
+      "step": "2025",
+      "title": "Db\\Helper::quoteInto and upsert behaviour changes",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "Helper::quoteInto\\(",
+        "Helper::upsert\\("
+      ],
+      "confidence": "documented",
+      "advice": "quoteInto no longer supports the $type argument, and upsert now returns the last insert id. Check each call.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "collation-general-ci",
+      "step": "2025",
+      "title": "Custom tables or migrations using utf8mb4_general_ci",
+      "kind": "grep",
+      "files": [
+        "php",
+        "sql"
+      ],
+      "patterns": [
+        "utf8mb4_general_ci"
+      ],
+      "confidence": "heuristic",
+      "advice": "The default collation changed to utf8mb4_unicode_520_ci in 12.0. Mixed collations break joins and comparisons, so review custom tables and migrations.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "getbyid-non-int",
+      "step": "2025",
+      "title": "getById called with a non-integer value",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "::getById\\(\\s*['\\\"]",
+        "::getById\\(\\s*\\(string\\)"
+      ],
+      "confidence": "heuristic",
+      "advice": "getById accepts only int in 12, and ElementInterface::getById takes an extra array $params = []. Cast ids to int and check classes that implement the interface.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "link-unserialize",
+      "step": "2025",
+      "title": "Data\\Link unserialize (removed)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "Data\\\\Link\\b.*unserialize",
+        "unserialize.*Data\\\\Link\\b"
+      ],
+      "confidence": "heuristic",
+      "advice": "Link::unserialize() is removed. Use the supported way to build the Link value.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "set-index-null",
+      "step": "2025",
+      "title": "ClassDefinition Data setIndex with null",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "->setIndex\\(\\s*null\\s*\\)"
+      ],
+      "confidence": "documented",
+      "advice": "setIndex no longer accepts null. Pass a value that matches the declared type.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "thumbnail-config-getter",
+      "step": "2025",
+      "title": "Asset\\Image::getThumbnailConfig (removed)",
+      "kind": "grep",
+      "files": [
+        "php",
+        "twig"
+      ],
+      "patterns": [
+        "->getThumbnailConfig\\("
+      ],
+      "confidence": "heuristic",
+      "advice": "The method is removed from Asset\\Image. Check that the match is on an image asset, then use the replacement in the upgrade notes.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "password-field",
+      "step": "2025",
+      "title": "Data\\Password field with removed hash algorithms",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "Data\\\\Password\\b"
+      ],
+      "confidence": "heuristic",
+      "advice": "Some password hash algorithms are removed. Check which algorithm the field and any custom hashing use.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "version-dependent-column",
+      "step": "2025",
+      "title": "getVersionDependentDatabaseColumnName (removed)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "getVersionDependentDatabaseColumnName"
+      ],
+      "confidence": "documented",
+      "advice": "The method is removed. Read the column name another way.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "csv-formula-formatter",
+      "step": "2025",
+      "title": "Pimcore\\Helper\\CsvFormulaFormatter (removed)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "CsvFormulaFormatter"
+      ],
+      "confidence": "documented",
+      "advice": "Use League\\Csv\\EscapeFormula instead.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "cached-symfony-envs",
+      "step": "2025",
+      "title": "Tool::getCachedSymfonyEnvironments (removed)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "getCachedSymfonyEnvironments"
+      ],
+      "confidence": "documented",
+      "advice": "The method is removed. Read the environments from the Symfony kernel or your own config.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "mail-without-sender",
+      "step": "2025",
+      "title": "Mail objects created in custom code (a mail with no sender now throws)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "new\\s+\\\\?(Pimcore\\\\Mail|Mail)\\("
+      ],
+      "confidence": "heuristic",
+      "advice": "Sending a mail without a sender now throws an exception. Make sure each Mail gets a sender, or that a default sender is configured.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "navigation-page-type",
+      "step": "2025",
+      "title": "Navigation Page::$_defaultPageType (removed)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "_defaultPageType"
+      ],
+      "confidence": "documented",
+      "advice": "The property is removed. Set the page type another way.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "key-value-table-twig",
+      "step": "2025",
+      "title": "key_value_table.html.twig (removed)",
+      "kind": "grep",
+      "files": [
+        "twig",
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "key_value_table\\.html\\.twig"
+      ],
+      "confidence": "documented",
+      "advice": "The template is removed. Copy it into the project if it is still needed.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "workflow-notifications",
+      "step": "2025",
+      "title": "Workflow notification and lookup calls",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "getWorkflowByName\\(",
+        "sendPimcoreNotification\\(",
+        "sendWorkflowEmailNotification\\("
+      ],
+      "confidence": "documented",
+      "advice": "getWorkflowByName now returns ?WorkflowInterface, and the two notification methods take a Transition object. Handle null and pass the transition.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "video-editable-types",
+      "step": "2025",
+      "title": "Video editable allowedTypes option",
+      "kind": "grep",
+      "files": [
+        "twig",
+        "php"
+      ],
+      "patterns": [
+        "allowedTypes"
+      ],
+      "confidence": "heuristic",
+      "advice": "An invalid value for allowedTypes now throws. Check the values passed to the video editable.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "asset-custom-settings",
+      "step": "2025",
+      "title": "Code that reads assets.customSettings directly",
+      "kind": "grep",
+      "files": [
+        "php",
+        "sql"
+      ],
+      "patterns": [
+        "customSettings.*(unserialize|json_decode)",
+        "(unserialize|json_decode).*customSettings"
+      ],
+      "confidence": "heuristic",
+      "advice": "The assets.customSettings column is JSON now. Check direct reads and writes of the column.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "low-quality-preview-command",
+      "step": "2025",
+      "title": "LowQualityImagePreviewCommand generator option",
+      "kind": "grep",
+      "files": [
+        "php",
+        "shell",
+        "yaml",
+        "ci"
+      ],
+      "patterns": [
+        "LowQualityImagePreviewCommand",
+        "low-quality-preview.*--generator"
+      ],
+      "confidence": "documented",
+      "advice": "The command lost its generator option. Remove it from scripts and subclasses.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "static-bundle-manager",
+      "step": "2025",
+      "title": "Static bundleManager access (removed)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "(static|self)::\\$bundleManager",
+        "static\\s+\\$bundleManager"
+      ],
+      "confidence": "heuristic",
+      "advice": "The static bundle manager layer is removed. Inject the bundle manager service instead.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "logger-filter-priority",
+      "step": "2025",
+      "title": "ApplicationLogger filter_priority",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "filter_priority"
+      ],
+      "confidence": "documented",
+      "advice": "The value is now 1 to 8. Check the configured range.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "job-run-repository",
+      "step": "2025",
+      "title": "JobRunRepositoryInterface implementations",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "JobRunRepositoryInterface"
+      ],
+      "confidence": "documented",
+      "advice": "The interface gained an executionContext parameter. Update custom implementations.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "custom-report-adapter",
+      "step": "2025",
+      "title": "Custom report adapters",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "CustomReportAdapterInterface",
+        "Tool\\\\Adapter\\\\AbstractAdapter"
+      ],
+      "confidence": "heuristic",
+      "advice": "The adapter interface gained getColumnsWithMetadata and getPagination. Implement them (also check classes extending AbstractAdapter).",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "query-builder-callback",
+      "step": "2025",
+      "title": "onCreateQueryBuilderCallback (deprecated in 12.2)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "onCreateQueryBuilderCallback"
+      ],
+      "confidence": "documented",
+      "advice": "Use queryBuilderProcessors instead.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "dialog-box-size",
+      "step": "2025",
+      "title": "EditableDialogBoxConfiguration width and height (deprecated in 12.3.10)",
+      "kind": "grep",
+      "files": [
+        "php",
+        "twig"
+      ],
+      "patterns": [
+        "EditableDialogBoxConfiguration"
+      ],
+      "confidence": "heuristic",
+      "advice": "The width and height settings are deprecated. Check each configuration for those two values.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "serialize-unserialize",
+      "step": "2025",
+      "title": "Serialize::unserialize without allowed classes (deprecated in 12.3.12)",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "Serialize::unserialize\\("
+      ],
+      "excludeLineIf": [
+        "Serialize::unserialize\\([^()]*,"
+      ],
+      "confidence": "documented",
+      "advice": "Pass $allowedClasses explicitly. The default becomes false in 2027.1.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Upgrade_Notes/"
+    },
+    {
+      "id": "classic-bundle-licence",
+      "step": "2025",
+      "title": "pimcore/admin-ui-classic-bundle installed (extra licence for Community users)",
+      "kind": "composer",
+      "patterns": [
+        "^pimcore/admin-ui-classic-bundle$"
+      ],
+      "confidence": "documented",
+      "advice": "Community Edition users of the Classic admin bundle need an additional licence. Read the licence section on the V11 to V12 page; the toolkit does not state terms.",
+      "source": "https://docs.pimcore.com/platform/2025.4/Pimcore/Installation_and_Upgrade/Updating_Pimcore/V11_to_V12"
+    },
+    {
+      "id": "deprecated-bundles-2025-4",
+      "step": "2025",
+      "title": "Bundles deprecated in 2025.4 (Advanced Object Search, Perspective Editor)",
+      "kind": "composer",
+      "patterns": [
+        "^pimcore/(advanced-object-search|perspective-editor)$"
+      ],
+      "confidence": "documented",
+      "advice": "Both are deprecated in 2025.4. Plan a replacement before 2026.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/04_2025.4/"
+    },
+    {
+      "id": "enterprise-only-bundles",
+      "step": "2025",
+      "title": "Web to Print bundle (Enterprise only from 2025.1)",
+      "kind": "composer",
+      "patterns": [
+        "^pimcore/web-to-print-bundle$"
+      ],
+      "confidence": "documented",
+      "advice": "Web to Print is Enterprise-only from 2025.1. Check the licence you hold.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/07_2025.1/"
+    },
+    {
+      "id": "enterprise-only-namespaces",
+      "step": "2025",
+      "title": "Customer Management, E-Commerce or Web to Print classes (Enterprise only from 2025.1)",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "CustomerManagementFramework",
+        "Pimcore\\\\Bundle\\\\EcommerceFrameworkBundle",
+        "Pimcore\\\\Bundle\\\\WebToPrintBundle"
+      ],
+      "confidence": "heuristic",
+      "advice": "Customer Management Framework, E-Commerce Framework, Targeting and Personalization, and Web to Print are Enterprise-only from 2025.1. Check the licence you hold. Namespaces are matched by name only.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/07_2025.1/"
+    },
+    {
+      "id": "classic-admin-interface",
+      "step": "2026",
+      "title": "Classic admin bundle interface or trait",
+      "kind": "grep",
+      "files": [
+        "php"
+      ],
+      "patterns": [
+        "PimcoreBundleAdminClassicInterface",
+        "BundleAdminClassicTrait"
+      ],
+      "confidence": "documented",
+      "advice": "The Classic UI is removed in 2026.1. Rewrite the admin part as a Studio plugin and backend extension (studio-ui-development.md, studio-backend-extension.md).",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "classic-admin-namespace",
+      "step": "2026",
+      "title": "Code that uses the classic admin bundle namespace",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml",
+        "twig"
+      ],
+      "patterns": [
+        "Pimcore\\\\Bundle\\\\AdminBundle\\\\",
+        "pimcore_admin_[a-z_]+",
+        "pimcore/admin-ui-classic-bundle"
+      ],
+      "confidence": "heuristic",
+      "advice": "Each match depends on the Classic UI bundle. Decide per file: replace with a Studio API, or keep only while you stay on 2025.4.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "classic-admin-js",
+      "step": "2026",
+      "title": "ExtJS or classic admin JavaScript",
+      "kind": "grep",
+      "files": [
+        "js"
+      ],
+      "patterns": [
+        "\\bExt\\.(define|create|onReady)\\(",
+        "\\bpimcore\\.plugin\\.",
+        "\\bpimcore\\.(object|asset|document)\\.[A-Za-z]+\\b",
+        "pimcore\\.layout\\."
+      ],
+      "confidence": "heuristic",
+      "advice": "ExtJS code does not run in Studio. List each file as a rewrite item, one feature at a time.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "classic-admin-events",
+      "step": "2026",
+      "title": "Listeners on classic admin events or classic admin controllers",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "AdminEvents::",
+        "Pimcore\\\\Bundle\\\\AdminBundle\\\\Event",
+        "extends\\s+(\\\\?[A-Za-z\\\\]*)?AdminAbstractController",
+        "extends\\s+(\\\\?[A-Za-z\\\\]*)?AdminController\\b"
+      ],
+      "confidence": "heuristic",
+      "advice": "These hook into the classic admin. Check whether Studio has an event or API for the same job.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "php-version",
+      "step": "2026",
+      "title": "PHP version below 8.4",
+      "kind": "composer-constraint",
+      "paths": [
+        [
+          "require",
+          "php"
+        ],
+        [
+          "config",
+          "platform",
+          "php"
+        ]
+      ],
+      "patterns": [
+        "^(?!.*8\\.[45]).*$"
+      ],
+      "confidence": "documented",
+      "advice": "2026.x needs PHP 8.4 or 8.5. Change the Docker image, CI and config.platform.php. Check the 2025.4 requirement on the official system requirements page.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "php-image",
+      "step": "2026",
+      "title": "Container image or CI job that pins PHP below 8.4",
+      "kind": "grep",
+      "files": [
+        "docker",
+        "ci"
+      ],
+      "patterns": [
+        "php[:-]?(7\\.[0-9]|8\\.[0-3])\\b",
+        "php-version:\\s*['\\\"]?8\\.[0-3]",
+        "PHP_VERSION[=:]\\s*['\\\"]?8\\.[0-3]"
+      ],
+      "confidence": "heuristic",
+      "advice": "Update the PHP version in the image and in CI to 8.4 or 8.5 for 2026.x.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "symfony-6",
+      "step": "2026",
+      "title": "Symfony 6.x constraints",
+      "kind": "composer-constraint",
+      "paths": [
+        [
+          "require",
+          "symfony/*"
+        ],
+        [
+          "require-dev",
+          "symfony/*"
+        ],
+        [
+          "extra",
+          "symfony",
+          "require"
+        ]
+      ],
+      "patterns": [
+        "(^|[^0-9.])6\\.[0-9x*]"
+      ],
+      "confidence": "documented",
+      "advice": "Symfony 7.x is required (7.3 or higher per the upgrade page). Drop explicit 6.x constraints and test on Symfony 7.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "install-without-profile",
+      "step": "2026",
+      "title": "pimcore-install call without --install-profile",
+      "kind": "grep",
+      "files": [
+        "docker",
+        "ci",
+        "shell"
+      ],
+      "patterns": [
+        "pimcore-install"
+      ],
+      "excludeLineIf": [
+        "--install-profile",
+        "--help",
+        "^\\s*#"
+      ],
+      "confidence": "documented",
+      "advice": "The installer needs --install-profile from 2026.1. Read vendor/bin/pimcore-install --help for the profile names; do not guess one.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "templating-engine",
+      "step": "2026",
+      "title": "Symfony Templating EngineInterface",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "Component\\\\Templating\\\\EngineInterface",
+        "\\bTemplating\\\\EngineInterface",
+        "templating\\.engine"
+      ],
+      "confidence": "documented",
+      "advice": "Replace EngineInterface with Twig\\Environment and render with the Twig service.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "messenger-dsn-prefix",
+      "step": "2026",
+      "title": "Messenger DSN prefix parameter",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml",
+        "env"
+      ],
+      "patterns": [
+        "pimcore\\.messenger\\.transport_dsn_prefix"
+      ],
+      "confidence": "documented",
+      "advice": "The parameter now has a trailing separator. Check how each transport DSN is built from it.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "collation",
+      "step": "2026",
+      "title": "Custom tables or migrations with another utf8mb4 collation",
+      "kind": "grep",
+      "files": [
+        "php",
+        "sql"
+      ],
+      "patterns": [
+        "utf8mb4_(unicode_ci|0900_ai_ci|bin)",
+        "COLLATE\\s+utf8mb4_(?!unicode_520_ci|general_ci)[a-z0-9_]+"
+      ],
+      "confidence": "heuristic",
+      "advice": "Pimcore tables and columns use utf8mb4_unicode_520_ci from 2026.1. Review the collation of custom tables, joins and migrations.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "ecommerce-tracking",
+      "step": "2026",
+      "title": "E-Commerce Framework tracker implementations and price calls",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "TrackingManagerInterface",
+        "\\bformatPrice\\(",
+        "\\bgetCartValue\\(",
+        "UniversalAnalytics"
+      ],
+      "confidence": "documented",
+      "advice": "TrackingManagerInterface gained methods, formatPrice() and getCartValue() return ?float, and GA4 replaces Universal Analytics. Add the methods and handle null.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "geoip",
+      "step": "2026",
+      "title": "GeoIP2 library 2.x",
+      "kind": "composer",
+      "patterns": [
+        "^geoip2/geoip2$"
+      ],
+      "confidence": "documented",
+      "advice": "Personalization moves from GeoIP2 2.x to 3.x and the response structure changed. Check custom code that reads the response.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "quantity-value",
+      "step": "2026",
+      "title": "Code that parses formatted QuantityValue",
+      "kind": "grep",
+      "files": [
+        "php",
+        "twig",
+        "js"
+      ],
+      "patterns": [
+        "QuantityValue.*(explode|preg_|substr|strpos)",
+        "(explode|preg_|substr|strpos).*QuantityValue"
+      ],
+      "confidence": "heuristic",
+      "advice": "The space between value and unit is removed in formatting. Check any code that splits the formatted string.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "mail-log-folders",
+      "step": "2026",
+      "title": "Mail log files in the old folder layout",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml",
+        "shell"
+      ],
+      "patterns": [
+        "var/email",
+        "pimcore:migrate:mail-logs-folder-structure"
+      ],
+      "confidence": "heuristic",
+      "advice": "Mail logs move to YYYY/MM/DD/<log filename>. Run pimcore:migrate:mail-logs-folder-structure or move the files, and fix any custom code that reads the old path.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "discontinued-bundles",
+      "step": "2026",
+      "title": "Bundles discontinued in 2026.1 (package found)",
+      "kind": "composer",
+      "patterns": [
+        "^pimcore/(file-explorer-bundle|google-marketing-bundle|newsletter-bundle|output-data-config-toolkit-bundle|system-info-bundle|web2print-tools-bundle)$"
+      ],
+      "confidence": "documented",
+      "advice": "These bundles are deprecated and discontinued in 2026.1. Plan a replacement or an own copy per bundle.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    },
+    {
+      "id": "discontinued-bundle-namespaces",
+      "step": "2026",
+      "title": "Classes from discontinued bundles (Glossary, Static Routes, Simple Backend Search, Word Export, XLIFF, SEO)",
+      "kind": "grep",
+      "files": [
+        "php",
+        "yaml"
+      ],
+      "patterns": [
+        "Pimcore\\\\Bundle\\\\(GlossaryBundle|StaticRoutesBundle|SimpleBackendSearchBundle|WordExportBundle|XliffBundle|SeoBundle)\\\\"
+      ],
+      "confidence": "heuristic",
+      "advice": "These bundles are discontinued in 2026.1, except SEO redirects and sitemaps. Package names were not verified, so matching is by namespace. Check each match against the 2026.1 release notes.",
+      "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
+    }
+  ],
+  "aliases": {
+    "12": "2025"
+  }
+}

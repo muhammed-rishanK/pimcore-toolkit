@@ -137,7 +137,7 @@ for p in ["skills/pimcore/SKILL.md", "skills/pimcore-setup/SKILL.md", "reference
 # 6. scripts
 scripts = ["skills/pimcore/scripts/detect-project.sh", "skills/pimcore-setup/scripts/detect-env.sh",
            "skills/pimcore-setup/scripts/gen-secrets.sh", "skills/pimcore-setup/scripts/health-check.sh",
-           "skills/pimcore-setup/scripts/install-prereqs.sh"]
+           "skills/pimcore-setup/scripts/install-prereqs.sh", "skills/pimcore/scripts/scan-platform-impact.sh"]
 for s in scripts:
     r = subprocess.run(["bash", "-n", os.path.join(ROOT, s)], capture_output=True)
     check(r.returncode == 0, f"{s}: bash syntax error {r.stderr.decode()[:200]}")
@@ -184,6 +184,125 @@ for name, pk in fx.items():
     check(bool(out.get("releaseLine")), f"detect-project {name}: releaseLine missing")
     if name != "classic11":
         check(bool(out.get("studioPackages")), f"detect-project {name}: studioPackages empty")
+
+# 6c. scan-platform-impact.sh: rules file and fixture project
+import re as _re
+RULES_PATH = "skills/pimcore/scripts/platform-impact-rules.json"
+check(os.path.exists(os.path.join(ROOT, RULES_PATH)), f"{RULES_PATH} missing")
+rules_doc = json.loads(read(RULES_PATH))
+ids = [r["id"] for r in rules_doc["rules"]]
+check(len(ids) == len(set(ids)), "platform-impact-rules.json: duplicate rule ids")
+for r in rules_doc["rules"]:
+    rid = r.get("id", "?")
+    for key in ("id", "step", "title", "kind", "confidence", "advice", "source"):
+        check(bool(r.get(key)), f"rule {rid}: missing {key}")
+    check(r.get("step") in rules_doc["steps"], f"rule {rid}: unknown step {r.get('step')}")
+    check(r.get("kind") in ("grep", "composer", "composer-constraint"), f"rule {rid}: unknown kind")
+    check(r.get("confidence") in ("documented", "heuristic"), f"rule {rid}: bad confidence")
+    check(str(r.get("source", "")).startswith("https://docs.pimcore.com/"), f"rule {rid}: source must be an official docs URL")
+    for p in r.get("patterns", []) + r.get("excludeLineIf", []):
+        try:
+            _re.compile(p)
+        except _re.error as e:
+            check(False, f"rule {rid}: bad regex {p}: {e}")
+    if r.get("kind") == "grep":
+        check(bool(r.get("files")) and bool(r.get("patterns")), f"rule {rid}: grep rule needs files and patterns")
+
+
+def scan(files, extra=()):
+    with tempfile.TemporaryDirectory() as d:
+        for rel, text in files.items():
+            p = os.path.join(d, rel)
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            with open(p, "w") as fh:
+                fh.write(text)
+        r = subprocess.run(["bash", os.path.join(ROOT, "skills/pimcore/scripts/scan-platform-impact.sh"), d,
+                            "--format", "json", *extra], capture_output=True, text=True)
+        try:
+            return json.loads(r.stdout), r.returncode
+        except Exception:
+            return {"_error": (r.stdout + r.stderr)[:300]}, r.returncode
+
+
+proj = {
+    "composer.json": json.dumps({"require": {"php": "^8.2", "symfony/console": "^6.4", "geoip2/geoip2": "^2.13"}}),
+    "src/A.php": "<?php\nuse Symfony\\Component\\Templating\\EngineInterface;\nclass A implements PimcoreBundleAdminClassicInterface {}\n",
+    "src/Clean.php": "<?php\nclass Clean {}\n",
+    "public/static/js/a.js": "Ext.define('x', {});\n",
+    ".github/workflows/ci.yml": "run: vendor/bin/pimcore-install -n\nrun: vendor/bin/pimcore-install --install-profile x\n",
+    "vendor/x/V.php": "<?php class V implements PimcoreBundleAdminClassicInterface {}\n",
+}
+rep, rc = scan(proj)
+check("_error" not in rep and rc == 0, f"scan fixture failed: {rep.get('_error')}")
+if "_error" not in rep:
+    found = {f["id"]: f for f in rep["findings"]}
+    for rid in ("classic-admin-interface", "classic-admin-js", "php-version", "symfony-6",
+                "install-without-profile", "templating-engine", "geoip"):
+        check(rid in found, f"scan fixture: rule {rid} did not match")
+    check(rep.get("readOnly") is True, "scan: readOnly flag missing")
+    check(found.get("classic-admin-interface", {}).get("total") == 1, "scan: vendor/ must be skipped")
+    check(found.get("install-without-profile", {}).get("total") == 1, "scan: the --install-profile line must not match")
+    check(all(m["file"] != "src/Clean.php" for f in rep["findings"] for m in f["matches"]), "scan: clean file matched")
+    check(rep["summary"]["filesAffected"] >= 4, "scan: summary filesAffected too low")
+rep_clean, _ = scan({"composer.json": json.dumps({"require": {"php": "~8.4"}}), "src/Clean.php": "<?php\nclass Clean {}\n"})
+check(rep_clean.get("summary", {}).get("totalMatches") == 0, f"scan: clean project must have no matches: {rep_clean.get('summary')}")
+bad, bad_rc = scan({"composer.json": "{}"}, extra=("--to", "bogus"))
+check(bad_rc == 2, "scan: unknown --to must exit 2")
+
+# 6d. step order, aliases, and the 2024/2025 rules
+check(rules_doc["steps"] == ["2024", "2025", "2026"], f"rules steps must be 2024, 2025, 2026: {rules_doc['steps']}")
+for alias, target in rules_doc.get("aliases", {}).items():
+    check(target in rules_doc["steps"], f"alias {alias} points to unknown step {target}")
+check(rules_doc.get("aliases", {}).get("12") == "2025", "rules aliases: 12 must map to 2025")
+check(len(rules_doc["rules"]) >= 50, f"expected the researched rule set, got {len(rules_doc['rules'])} rules")
+by_step = {s: [r for r in rules_doc["rules"] if r["step"] == s] for s in rules_doc["steps"]}
+check(all(by_step[s] for s in by_step), "every step needs at least one rule")
+
+proj2 = {
+    "composer.json": json.dumps({"require": {
+        "php": "~8.4", "doctrine/dbal": "^3.6", "gotenberg/gotenberg-php": "^1.1",
+        "pimcore/admin-ui-classic-bundle": "^1.0", "pimcore/web-to-print-bundle": "^1.0",
+        "pimcore/newsletter-bundle": "^1.0", "pimcore/advanced-object-search": "^1.0"}}),
+    "templates/a.html.twig": "{{ pimcore_block('x') }}\n{{ pimcore_cache('k') }}\n",
+    "src/B.php": ("<?php\nuse Doctrine\\Common\\Annotations\\Reader;\nuse Pimcore\\Db\\Helper;\n"
+                  "Helper::quoteInto('a = ?', 1);\n$f->setIndex(null);\nnew CsvFormulaFormatter();\n"
+                  "Serialize::unserialize($x);\nSerialize::unserialize($x, ['A']);\n"
+                  "use Pimcore\\Event\\Model\\Asset\\ResolveUploadTargetEvent;\n"),
+    "config/packages/security.yaml": "security:\n  enable_authenticator_manager: true\n",
+    "docker/Dockerfile": "FROM php:8.4-fpm\nRUN apt-get install -y chromium\n",
+    "src/Clean.php": "<?php\nclass Clean {}\n",
+}
+r24, rc24 = scan(proj2, extra=("--to", "2024"))
+r12, rc12 = scan(proj2, extra=("--to", "12"))
+r25, _ = scan(proj2, extra=("--to", "2025"))
+r26, _ = scan(proj2, extra=("--to", "2026"))
+check(rc24 == 0 and rc12 == 0 and "_error" not in r24 and "_error" not in r12, f"scan proj2 failed: {r24.get('_error')} {r12.get('_error')}")
+if "_error" not in r24 and "_error" not in r12 and "_error" not in r25 and "_error" not in r26:
+    f24 = {f["id"]: f for f in r24["findings"]}
+    f12 = {f["id"]: f for f in r12["findings"]}
+    f26 = {f["id"]: f for f in r26["findings"]}
+    for rid in ("twig-pimcore-block", "twig-pimcore-cache", "upload-target-event"):
+        check(rid in f24, f"scan --to 2024: rule {rid} did not match")
+    for rid in ("authenticator-manager", "doctrine-annotations", "db-helper", "set-index-null",
+                "csv-formula-formatter", "dbal-v3", "gotenberg-v1", "classic-bundle-licence",
+                "enterprise-only-bundles", "deprecated-bundles-2025-4", "headless-chrome", "serialize-unserialize"):
+        check(rid in f12, f"scan --to 12: rule {rid} did not match")
+    for rid in ("authenticator-manager", "dbal-v3", "db-helper"):
+        check(rid not in f24, f"scan --to 2024 must not include 2025 rule {rid}")
+    check("discontinued-bundles" not in f12, "scan --to 12 must not include 2026 rule discontinued-bundles")
+    check("discontinued-bundles" in f26, "scan --to 2026: discontinued-bundles did not match")
+    check(f12.get("serialize-unserialize", {}).get("total") == 1, "scan: Serialize::unserialize with allowed classes must not match")
+    check(r12["summary"] == r25["summary"], "scan: --to 12 must equal --to 2025")
+    check(all(m["file"] != "src/Clean.php" for f in r26["findings"] for m in f["matches"]), "scan proj2: clean file matched")
+
+# the script must work when called by a relative path with a relative project root
+rel = subprocess.run(["bash", "skills/pimcore/scripts/scan-platform-impact.sh", "references", "--format", "json"],
+                     cwd=ROOT, capture_output=True, text=True)
+try:
+    rel_rep = json.loads(rel.stdout)
+    check(rel.returncode == 0 and rel_rep["root"].endswith("/references"), "scan: relative script path and root must work")
+except Exception:
+    check(False, f"scan: relative path run failed: {(rel.stdout + rel.stderr)[:200]}")
 
 # 7. writing style over shipped files
 for dirpath, _, files in os.walk(ROOT):

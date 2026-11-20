@@ -60,9 +60,11 @@ If something is broken, `/pimcore-setup --repair` diagnoses it and applies each 
 /pimcore explain how Product objects get their prices
 ```
 
+For Pimcore 12 use `--version 2025.4` (the skeleton has no `12` tag; 2025.4 installs `pimcore/pimcore ^12.3` with the Classic UI, and `--version 2026` installs Studio only).
+
 Run `/pimcore-setup --plan` to see which versions can be installed (with PHP needs and whether a product key is required) and what happens in each situation, without building anything. A normal run prints the same table, installs the recommended row and records the choice.
 
-Useful `/pimcore-setup` options: `--plan`, `--ask`, `--secure-admin`, `--no-install`, `--runtime docker|native`, `--profile skeleton|demo`, `--version 11`, `--dir <path>`, `--check`, `--repair`.
+Useful `/pimcore-setup` options: `--plan`, `--ask`, `--secure-admin`, `--no-install`, `--runtime docker|native`, `--profile skeleton|demo`, `--version 11` or `--version 2025.4`, `--dir <path>`, `--check`, `--repair`.
 
 ## Usage examples
 
@@ -105,11 +107,26 @@ Useful `/pimcore-setup` options: `--plan`, `--ask`, `--secure-admin`, `--no-inst
 |---|---|---|
 | 10.x | classic, inside core | Symfony 5.4 |
 | 11.x | classic, separate bundle | Symfony 6.2+, many features moved to bundles |
-| 12.x | classic, Studio can run beside it | last numbered line |
+| 12.x | classic, Studio can run beside it | last numbered line; installed with skeleton `2025.x` (2025.4 requires `pimcore/pimcore ^12.3`) |
 | 2025.4 (LTS) | classic, Studio compatible | three years from the 2025-12-09 release, platform only; last release with the classic UI |
 | 2026.x | Studio only | PHP 8.4 or 8.5, Symfony 7.x, `pimcore-install --install-profile` |
 
 `detect-project.sh` reports `releaseLine`, `yearBased` and `adminUi` (core, both, studio, classic or unknown), so agents pick the right modules without guessing. For a move to 2025.4 or 2026 the `platform-2026-upgrade` module gives a phased plan with targeted migration commands and a rollback.
+
+## Upgrade impact scan
+
+For an upgrade plan (for example 2024 to 2026) the upgrade specialist starts from a repeatable, read-only scan instead of ad-hoc grepping:
+
+```bash
+bash skills/pimcore/scripts/scan-platform-impact.sh <project-root> --to 2026          # table
+bash skills/pimcore/scripts/scan-platform-impact.sh <project-root> --to 12 --format json
+```
+
+`--to` picks how far the plan goes: `2024` (deprecations in 11.5 and 2024.x), `2025` or `12` (Pimcore 12 and 2025.x, `12` is an alias), `2026` (2026.x, default). Steps are cumulative, so `--to 2026` also runs the earlier rules.
+
+For each documented breaking-change item the scan lists every matching `file:line`, says whether the rule is `documented` or `heuristic`, links the official page and names the rules that did not match. There are 59 rules: 7 for the 2024 step, 35 for the 2025 step and 17 for the 2026 step. It skips `vendor/`, `var/`, `node_modules/` and `.git/`, and it changes nothing. The rules are data in `skills/pimcore/scripts/platform-impact-rules.json`, so a new breaking change is a new entry.
+
+It does not replace a PHP deprecation report. Add PHPStan deprecation rules or the Symfony deprecation log for deprecated calls the rules do not list.
 
 ## Skills and modules
 
@@ -159,7 +176,7 @@ pimcore-toolkit/
   references/orchestration.md  routing table, workflows, validation rules
   references/output-formats.md report formats (routing, feature, bug, review, plan, setup)
   references/pimcore-versions.md version matrix 10 to 2026, LTS, Studio, sources
-  skills/pimcore/              /pimcore entry + scripts/detect-project.sh
+  skills/pimcore/              /pimcore entry + scripts/{detect-project,scan-platform-impact}.sh + platform-impact-rules.json
   skills/pimcore-setup/        /pimcore-setup entry + scripts/{detect-env,gen-secrets,health-check}.{sh,ps1}
   skills/pimcore-engineering/  hidden, 18 modules
   skills/pimcore-environment/  hidden, 8 modules
@@ -180,8 +197,9 @@ For the routing scenarios, see `tests/scenarios.md`.
 
 - The 26 skills are modules inside two hidden skills, not 26 separate skills. Claude Code does not discover nested skills.
 - The PowerShell scripts (`*.ps1`) have not been run on Windows yet. The bash scripts have been tested on Linux.
-- Version coverage: Pimcore 10, 11, 12.x, the 2025.4 LTS and the 2026 releases, taken from the official docs and listed with sources in `references/pimcore-versions.md`. Anything the docs do not state (licence and product key changes, how 12.x maps to the 2025 tags) is written as "not stated", and the toolkit tells you to read `composer.lock` and the official page.
+- Version coverage: Pimcore 10, 11, 12.x, the 2025.4 LTS and the 2026 releases, taken from the official docs and listed with sources in `references/pimcore-versions.md`. Anything the docs do not state (licence and product key changes) is written as "not stated", and the toolkit tells you to read `composer.lock` and the official page.
 - Studio support: the Studio UI and Studio Backend modules cover what the official docs describe (React, Rsbuild, entry-point provider, backend controllers, events, grid tags). The JavaScript plugin registration API was not in the pages the modules are based on, so the module tells you to copy the official example bundle and read the installed package.
+- The upgrade impact scan only checks the items in its rules file, and `heuristic` matches (for example bundles matched by namespace because their Packagist name could not be confirmed) are leads, not proof. The 2024.x, 2025.x and 11 to 12 items were read from fetched summaries of the official upgrade notes, so check identifiers against `vendor/` or the linked page. The per-bundle upgrade notes (Data Importer, Data Hub, Generic Data Index and others) were not read.
 - The quality of the agents depends on the project. A project with no tests or static analysis gets weaker validation, and the report says so.
 - Future work: **`/pimcore-doctor`**, a read-only health and best-practice audit of an existing project. It would cover configuration, class definitions, workers, caches, indexes, security headers and deprecated API use, and would reuse `health-check` and the code-review module.
 
