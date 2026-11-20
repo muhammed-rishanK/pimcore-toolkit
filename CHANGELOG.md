@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Added `package.json` and a GitHub Actions workflow (`.github/workflows/publish-package.yml`) that publishes the plugin files to GitHub Packages as `@muhammed-rishank/pimcore-toolkit` when a release is published. The workflow uses the built-in `GITHUB_TOKEN`, checks that the release tag matches the `package.json` version, and runs the structure tests first.
+- The Claude Code install is unchanged: install from the marketplace as before. The package is an extra download of the same files.
+
 ## 1.1.0
 
 - New read-only impact scan, `skills/pimcore/scripts/scan-platform-impact.sh <project> [--to 12|2024|2025|2026] [--format table|json]`. For each documented breaking-change item it lists every matching `file:line` in the project, marks each rule `documented` or `heuristic`, links the official source, and names the rules that did not match. It skips `vendor/`, `var/`, `node_modules/` and `.git/` and never changes anything.
