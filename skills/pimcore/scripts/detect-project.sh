@@ -79,15 +79,50 @@ out["testSuites"] = sorted(os.path.basename(p) for p in glob.glob(os.path.join(r
 out["instructionFiles"] = [f for f in ("CLAUDE.md", "AGENTS.md", ".claude/CLAUDE.md", "CONTRIBUTING.md") if os.path.exists(os.path.join(root, f))]
 out["migrationsDirs"] = [d for d in ("src/Migrations", "migrations") if os.path.isdir(os.path.join(root, d))]
 major = None
+minor = None
 if out["pimcore"]:
-    m = re.search(r"(\d+)", str(out["pimcore"]))
+    m = re.search(r"(\d+)(?:\.(\d+))?", str(out["pimcore"]))
     major = int(m.group(1)) if m else None
+    minor = int(m.group(2)) if m and m.group(2) is not None else None
 out["pimcoreMajor"] = major
+# Year-based platform releases (YYYY.N.patch) start with 2025.4 / 2026.1: the first number is a year.
+yearly = bool(major and major >= 2000)
+if yearly:
+    out["releaseLine"] = "%s.%s" % (major, minor) if minor is not None else str(major)
+elif major:
+    out["releaseLine"] = "%s.x" % major
+else:
+    out["releaseLine"] = None
+out["yearBased"] = yearly
+classic = "pimcore/admin-ui-classic-bundle" in pkgs
+studio = sorted(k for k in pkgs if k.startswith("pimcore/") and "studio" in k)
+out["studioPackages"] = {k: pkgs[k] for k in studio}
+if major == 10:
+    out["adminUi"] = "core"
+elif classic and studio:
+    out["adminUi"] = "both"
+elif studio:
+    out["adminUi"] = "studio"
+elif classic:
+    out["adminUi"] = "classic"
+else:
+    out["adminUi"] = "unknown" if out["isPimcore"] else None
 notes = []
 if out["isPimcore"] and "pimcore/pimcore" not in pkgs:
     notes.append("composer.lock missing or has no pimcore/pimcore: version is only a constraint, run composer install or read vendor/pimcore/pimcore/composer.json")
-if major and major >= 11 and "pimcore/admin-ui-classic-bundle" not in pkgs:
-    notes.append("no admin-ui-classic-bundle in composer.lock: check whether the project uses Pimcore Studio or no admin UI")
+if major and major >= 11 and out["adminUi"] == "unknown":
+    notes.append("no classic admin bundle and no Studio package in composer.lock: check whether the project has no admin UI or uses a different package name")
+if out["adminUi"] == "both":
+    notes.append("classic UI and Studio are both installed: new UI work should target Studio; read references/pimcore-versions.md before planning")
+if yearly and major >= 2026 and classic:
+    notes.append("the classic admin UI is removed from 2026.1; pimcore/admin-ui-classic-bundle in composer.lock should not be present: read platform-2026-upgrade.md")
+if yearly and major == 2025 and minor == 4:
+    notes.append("2025.4 is the LTS line per the release blog (three years from 2025-12-09) and the last release with the classic UI; Studio is outside the LTS promise")
+if yearly and major >= 2026:
+    notes.append("2026.x needs PHP 8.4 or 8.5, Symfony 7.x and pimcore-install --install-profile (read --help for the profile names)")
+    _m = re.match(r"(\d+)\.(\d+)", out["phpCli"] or "")
+    if _m and (int(_m.group(1)), int(_m.group(2))) < (8, 4):
+        notes.append("host PHP %s is below 8.4: run the project in its Docker image or switch the PHP version" % out["phpCli"])
 out["notes"] = notes
 print(json.dumps(out, indent=1))
 PYEOF
@@ -95,7 +130,7 @@ fi
 
 # Fallback without Python: grep-based, less detail.
 ver() { grep -A3 "\"name\": \"$1\"" composer.lock 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version": "\([^"]*\)".*/\1/'; }
-printf '{\n "root": "%s",\n "pimcore": "%s",\n "symfony": "%s",\n "adminUiClassic": "%s",\n "dockerCompose": %s,\n "instructionFiles": "%s",\n "note": "python not found: limited detection"\n}\n' \
-  "$PWD" "$(ver pimcore/pimcore)" "$(ver symfony/framework-bundle)" "$(ver pimcore/admin-ui-classic-bundle)" \
+printf '{\n "root": "%s",\n "pimcore": "%s",\n "symfony": "%s",\n "adminUiClassic": "%s",\n "studioUi": "%s",\n "dockerCompose": %s,\n "instructionFiles": "%s",\n "note": "python not found: limited detection"\n}\n' \
+  "$PWD" "$(ver pimcore/pimcore)" "$(ver symfony/framework-bundle)" "$(ver pimcore/admin-ui-classic-bundle)" "$(ver pimcore/studio-ui-bundle)" \
   "$( [ -f docker-compose.yaml ] || [ -f docker-compose.yml ] || [ -f compose.yaml ] && echo true || echo false)" \
   "$(ls CLAUDE.md AGENTS.md 2>/dev/null | tr '\n' ' ')"

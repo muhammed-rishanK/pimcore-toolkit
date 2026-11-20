@@ -99,11 +99,23 @@ Useful `/pimcore-setup` options: `--plan`, `--ask`, `--secure-admin`, `--no-inst
 | `pimcore-upgrade-specialist` | opus | no | version analysis, breaking changes, upgrade plan |
 | `pimcore-environment-setup` | sonnet | yes (new environment only) | runs the build steps of `/pimcore-setup` |
 
+## Supported Pimcore lines
+
+| Line | Admin UI | Notes (from the official docs, see `references/pimcore-versions.md`) |
+|---|---|---|
+| 10.x | classic, inside core | Symfony 5.4 |
+| 11.x | classic, separate bundle | Symfony 6.2+, many features moved to bundles |
+| 12.x | classic, Studio can run beside it | last numbered line |
+| 2025.4 (LTS) | classic, Studio compatible | three years from the 2025-12-09 release, platform only; last release with the classic UI |
+| 2026.x | Studio only | PHP 8.4 or 8.5, Symfony 7.x, `pimcore-install --install-profile` |
+
+`detect-project.sh` reports `releaseLine`, `yearBased` and `adminUi` (core, both, studio, classic or unknown), so agents pick the right modules without guessing. For a move to 2025.4 or 2026 the `platform-2026-upgrade` module gives a phased plan with targeted migration commands and a rollback.
+
 ## Skills and modules
 
-Claude Code discovers skills only one level deep (`skills/<name>/SKILL.md`). The 23 skills are therefore module files inside two hidden skills, and each loads only when needed. All modules share one template: Purpose and scope (use when / do not use when), Inspect, Workflow, Best practices, Common mistakes, Version notes, Example, Validation checklist, Expected output.
+Claude Code discovers skills only one level deep (`skills/<name>/SKILL.md`). The 26 skills are therefore module files inside two hidden skills, and each loads only when needed. All modules share one template: Purpose and scope (use when / do not use when), Inspect, Workflow, Best practices, Common mistakes, Version notes, Example, Validation checklist, Expected output.
 
-**`pimcore-engineering`** (15 development modules): requirements-analysis, solution-planning, pimcore-architecture, backend-development, data-modelling, admin-ui-development, object-lifecycle, integration-development, data-import-export, performance-optimization, security-best-practices, testing-validation, code-review, upgrade-migration, deployment-release.
+**`pimcore-engineering`** (18 development modules): requirements-analysis, solution-planning, pimcore-architecture, backend-development, data-modelling, admin-ui-development, studio-ui-development, studio-backend-extension, object-lifecycle, integration-development, data-import-export, performance-optimization, security-best-practices, testing-validation, code-review, upgrade-migration, platform-2026-upgrade, deployment-release.
 
 **`pimcore-environment`** (8 setup modules): environment-detection, docker-environment, native-environment, pimcore-installation, database-provisioning, environment-security, setup-validation, environment-troubleshooting.
 
@@ -111,14 +123,14 @@ Claude Code discovers skills only one level deep (`skills/<name>/SKILL.md`). The
 
 | Agent | Preloaded skill | Main modules |
 |---|---|---|
-| solution-architect | pimcore-engineering | solution-planning, pimcore-architecture, requirements-analysis |
-| developer | pimcore-engineering | backend-development, admin-ui-development, object-lifecycle, security-best-practices |
+| solution-architect | pimcore-engineering | solution-planning, pimcore-architecture, requirements-analysis, studio modules and platform-2026-upgrade when relevant |
+| developer | pimcore-engineering | backend-development, admin-ui-development, studio-ui-development, studio-backend-extension, object-lifecycle, security-best-practices |
 | data-modeler | pimcore-engineering | data-modelling, object-lifecycle, data-import-export |
 | debugger | pimcore-engineering | object-lifecycle, performance-optimization, pimcore-architecture |
 | integration-specialist | pimcore-engineering | integration-development, data-import-export, security-best-practices |
 | code-reviewer | pimcore-engineering | code-review, security-best-practices, performance-optimization |
 | qa-engineer | pimcore-engineering | testing-validation |
-| upgrade-specialist | pimcore-engineering | upgrade-migration, deployment-release |
+| upgrade-specialist | pimcore-engineering | upgrade-migration, platform-2026-upgrade, deployment-release |
 | environment-setup | pimcore-environment | all 8 setup modules |
 
 ## How orchestration works
@@ -146,9 +158,10 @@ pimcore-toolkit/
   agents/                      9 agents
   references/orchestration.md  routing table, workflows, validation rules
   references/output-formats.md report formats (routing, feature, bug, review, plan, setup)
+  references/pimcore-versions.md version matrix 10 to 2026, LTS, Studio, sources
   skills/pimcore/              /pimcore entry + scripts/detect-project.sh
   skills/pimcore-setup/        /pimcore-setup entry + scripts/{detect-env,gen-secrets,health-check}.{sh,ps1}
-  skills/pimcore-engineering/  hidden, 15 modules
+  skills/pimcore-engineering/  hidden, 18 modules
   skills/pimcore-environment/  hidden, 8 modules
   tests/test_structure.py      structure and style checks (python3, no dependencies)
   tests/scenarios.md           8 routing scenarios
@@ -165,9 +178,10 @@ For the routing scenarios, see `tests/scenarios.md`.
 
 ## Limitations
 
-- The 23 skills are modules inside two hidden skills, not 23 separate skills. Claude Code does not discover nested skills.
+- The 26 skills are modules inside two hidden skills, not 26 separate skills. Claude Code does not discover nested skills.
 - The PowerShell scripts (`*.ps1`) have not been run on Windows yet. The bash scripts have been tested on Linux.
-- The version notes in the modules cover Pimcore 10 and 11 in detail. Releases after 11 (Studio, licence changes) are flagged to be checked against the official documentation rather than written from memory.
+- Version coverage: Pimcore 10, 11, 12.x, the 2025.4 LTS and the 2026 releases, taken from the official docs and listed with sources in `references/pimcore-versions.md`. Anything the docs do not state (licence and product key changes, how 12.x maps to the 2025 tags) is written as "not stated", and the toolkit tells you to read `composer.lock` and the official page.
+- Studio support: the Studio UI and Studio Backend modules cover what the official docs describe (React, Rsbuild, entry-point provider, backend controllers, events, grid tags). The JavaScript plugin registration API was not in the pages the modules are based on, so the module tells you to copy the official example bundle and read the installed package.
 - The quality of the agents depends on the project. A project with no tests or static analysis gets weaker validation, and the report says so.
 - Future work: **`/pimcore-doctor`**, a read-only health and best-practice audit of an existing project. It would cover configuration, class definitions, workers, caches, indexes, security headers and deprecated API use, and would reuse `health-check` and the code-review module.
 

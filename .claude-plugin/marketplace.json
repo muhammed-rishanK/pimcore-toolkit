@@ -5,13 +5,13 @@
     "url": "https://github.com/muhammed-rishanK"
   },
   "metadata": {
-    "description": "Pimcore Engineering Toolkit for Claude Code: development workflows and environment setup for any Pimcore project."
+    "description": "Pimcore Engineering Toolkit for Claude Code: development workflows and environment setup for Pimcore 10, 11, 12, the 2025.4 LTS and 2026 with Pimcore Studio."
   },
   "plugins": [
     {
       "name": "pimcore-toolkit",
       "source": "./",
-      "description": "Pimcore development (/pimcore) and environment setup (/pimcore-setup) with specialist agents."
+      "description": "Pimcore development (/pimcore) and environment setup (/pimcore-setup) with specialist agents, including Studio and 2026 upgrade support."
     }
   ]
 }

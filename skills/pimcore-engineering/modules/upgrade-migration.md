@@ -4,7 +4,7 @@
 Planning Pimcore, PHP, Symfony and bundle upgrades, and handling deprecations and breaking changes: compatibility analysis, the order of steps, data and schema migrations, testing and rollback. Planning only; executing a major upgrade needs explicit user approval.
 
 **Use when:** the user asks about upgrading, a dependency needs a newer Pimcore, a deprecation warning must be cleared, or a new install needs a version decision.
-**Do not use when:** the task is a normal feature within the current version.
+**Do not use when:** the task is a normal feature within the current version. For 2025.4 or 2026.x targets, use `platform-2026-upgrade.md` instead.
 
 ## Inspect the project first
 - `composer.lock`: every `pimcore/*` package, `symfony/*` versions, Doctrine, third-party bundles and their constraints.
@@ -37,8 +37,10 @@ Planning Pimcore, PHP, Symfony and bundle upgrades, and handling deprecations an
 - Symfony 6.x: authenticator-based security only, removed deprecated APIs.
 - Some settings moved to config files or the settings store with configurable storage locations.
 
-### Later releases (verify)
-Pimcore 12 and the year-based releases introduce Pimcore Studio and licence changes, and raise PHP and Symfony requirements. Read the official requirements; do not assume the PHP or Symfony version from memory.
+### 11 to 12, 2025.4 LTS and the 2026 releases
+- Year-based releases are `YYYY.N.patch`. 2025.4 is the LTS (three years from its 2025-12-09 release) and the last release with the classic UI. 2026.1 removes the classic UI, needs PHP 8.4 or 8.5 and Symfony 7.x, and changes the installer.
+- Use `platform-2026-upgrade.md` for the checklist, and `references/pimcore-versions.md` for the line matrix and sources. Read the upgrade notes of the exact target release; do not assume PHP or Symfony versions from memory.
+- Licence or product key rules are not stated in the release notes read for the toolkit. Read the licence of the target version before advising.
 
 ## Best practices
 - One phase per branch or merge request; each phase deployable.

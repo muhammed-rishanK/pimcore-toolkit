@@ -4,7 +4,7 @@
 Changing what editors see and do in the Pimcore admin: admin JavaScript extensions, admin events that shape data sent to or received from the UI, custom layouts, grid configuration, object editor buttons and tabs, and the difference between the classic admin UI and Pimcore Studio.
 
 **Use when:** adding a button, panel or tab; changing how a field is shown; reacting to object open or save in the UI; adjusting data sent to the editor; editing custom layouts.
-**Do not use when:** the rule must also hold for imports, APIs or commands. Enforce it in PHP (event subscriber or validation) and use the UI only as a convenience.
+**Do not use when:** the rule must also hold for imports, APIs or commands. Enforce it in PHP (event subscriber or validation) and use the UI only as a convenience. Also not for Pimcore Studio projects: use `studio-ui-development.md` and `studio-backend-extension.md`.
 
 ## Inspect the project first
 - Which admin UI the project runs: `pimcore/admin-ui-classic-bundle` in `composer.lock` (Pimcore 11), core admin (Pimcore 10), or Pimcore Studio packages (later releases).
@@ -32,12 +32,13 @@ Changing what editors see and do in the Pimcore admin: admin JavaScript extensio
 - Using a custom layout to "secure" a field.
 - Forgetting `assets:install` and the browser cache after changing JS.
 - Copying Pimcore 10 plugin broker code into Pimcore 11.
-- Building new extensions on the classic UI for a release that targets Studio without checking the roadmap.
+- Building new extensions on the classic UI for a project that will move to 2026.x: they must be rewritten for Studio. Check `platform-2026-upgrade.md` first.
 
 ## Version notes
 - Pimcore 10: admin UI in core; JS plugins through the plugin broker.
 - Pimcore 11: classic admin UI in `pimcore/admin-ui-classic-bundle`; JS events through `pimcore.events.*` and `document.addEventListener`; admin PHP events in `Pimcore\Bundle\AdminBundle\Event\AdminEvents`.
-- Later releases: Pimcore Studio (React based) with its own extension model. Check the release's docs for whether the classic UI is still supported and how Studio plugins are built.
+- 12.x and 2025.4 (LTS): classic UI; Pimcore Studio can run beside it. 2025.4 is the last release with the classic UI.
+- 2026.1 and later: Pimcore Studio (React) is the only admin UI. The classic UI, its ExtJS files, classic admin controllers and `PimcoreBundleAdminClassicInterface` implementations are removed. Use `studio-ui-development.md` and `studio-backend-extension.md`, and plan the move with `platform-2026-upgrade.md`. Facts and sources: `references/pimcore-versions.md`.
 
 ## Example
 Show a read-only warning banner when an editor opens a Product that is locked by an integration:

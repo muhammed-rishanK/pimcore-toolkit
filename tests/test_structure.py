@@ -38,9 +38,10 @@ def frontmatter(text):
 
 
 DEV_MODULES = ["requirements-analysis", "solution-planning", "pimcore-architecture", "backend-development",
-               "data-modelling", "admin-ui-development", "object-lifecycle", "integration-development",
+               "data-modelling", "admin-ui-development", "studio-ui-development", "studio-backend-extension",
+               "object-lifecycle", "integration-development",
                "data-import-export", "performance-optimization", "security-best-practices", "testing-validation",
-               "code-review", "upgrade-migration", "deployment-release"]
+               "code-review", "upgrade-migration", "platform-2026-upgrade", "deployment-release"]
 SETUP_MODULES = ["environment-detection", "docker-environment", "native-environment", "pimcore-installation",
                  "database-provisioning", "environment-security", "setup-validation", "environment-troubleshooting"]
 AGENTS = {
@@ -119,7 +120,7 @@ check(on_disk == sorted(AGENTS), f"agents on disk {on_disk} differ from expected
 
 # 5. module and agent names referenced in commands, references and agents exist
 all_mods = set(DEV_MODULES + SETUP_MODULES)
-known_docs = {"SKILL", "CLAUDE", "README", "orchestration", "output-formats", "scenarios"}
+known_docs = {"SKILL", "CLAUDE", "README", "orchestration", "output-formats", "scenarios", "pimcore-versions"}
 skip_prefix = ("pimcore-engineering", "pimcore-environment", "pimcore-setup", "pimcore-toolkit",
                "pimcore-install", "pimcore-doctor", "pimcore-architecture", "pimcore-app")
 for p in ["skills/pimcore/SKILL.md", "skills/pimcore-setup/SKILL.md", "references/orchestration.md",
@@ -143,6 +144,46 @@ for s in scripts:
     check(os.access(os.path.join(ROOT, s), os.X_OK), f"{s}: not executable")
 for s in ["detect-env.ps1", "gen-secrets.ps1", "health-check.ps1", "install-prereqs.ps1"]:
     check(os.path.exists(os.path.join(ROOT, "skills/pimcore-setup/scripts", s)), f"{s} missing")
+
+
+# 6b. detect-project.sh on fixtures: release line and admin UI detection
+import tempfile
+check(os.path.exists(os.path.join(ROOT, "references/pimcore-versions.md")), "references/pimcore-versions.md missing")
+
+
+def detect(packages, extra_json=None):
+    with tempfile.TemporaryDirectory() as d:
+        lock = {"packages": [{"name": n, "version": v} for n, v in packages.items()]}
+        with open(os.path.join(d, "composer.lock"), "w") as fh:
+            json.dump(lock, fh)
+        with open(os.path.join(d, "composer.json"), "w") as fh:
+            json.dump({"require": {"pimcore/pimcore": "*"}}, fh)
+        r = subprocess.run(["bash", os.path.join(ROOT, "skills/pimcore/scripts/detect-project.sh"), d],
+                           capture_output=True, text=True)
+        try:
+            return json.loads(r.stdout)
+        except Exception:
+            return {"_error": (r.stdout + r.stderr)[:300]}
+
+
+fx = {
+    "classic11": {"pimcore/pimcore": "v11.4.0", "pimcore/admin-ui-classic-bundle": "v1.5.0", "symfony/framework-bundle": "v6.4.0"},
+    "both": {"pimcore/pimcore": "v12.1.0", "pimcore/admin-ui-classic-bundle": "v2.0.0",
+             "pimcore/studio-ui-bundle": "v1.0.0", "symfony/framework-bundle": "v7.3.0"},
+    "y2026": {"pimcore/pimcore": "2026.1.0", "pimcore/studio-ui-bundle": "2026.1.0", "symfony/framework-bundle": "v7.3.0"},
+}
+expect = {"classic11": ("classic", False), "both": ("both", False), "y2026": ("studio", True)}
+for name, pk in fx.items():
+    out = detect(pk)
+    check("_error" not in out, f"detect-project fixture {name}: {out.get('_error')}")
+    if "_error" in out:
+        continue
+    ui, year = expect[name]
+    check(out.get("adminUi") == ui, f"detect-project {name}: adminUi {out.get('adminUi')} != {ui}")
+    check(out.get("yearBased") == year, f"detect-project {name}: yearBased {out.get('yearBased')} != {year}")
+    check(bool(out.get("releaseLine")), f"detect-project {name}: releaseLine missing")
+    if name != "classic11":
+        check(bool(out.get("studioPackages")), f"detect-project {name}: studioPackages empty")
 
 # 7. writing style over shipped files
 for dirpath, _, files in os.walk(ROOT):

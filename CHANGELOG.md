@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.0
+
+Pimcore 12, the 2025.4 LTS and Pimcore Studio are now covered. Facts come from the official docs and are listed with sources in `references/pimcore-versions.md`. Where the docs say nothing (licence and product key changes, the mapping of 12.x to 2025 tags), the toolkit says "not stated".
+
+- New modules: `studio-ui-development` (React, Rsbuild, entry-point provider), `studio-backend-extension` (controllers, OpenAPI, events, grid tags, metadata adapters) and `platform-2026-upgrade` (breaking-change table, eight phases, targeted migration commands, rollback). Development modules: 15 to 18.
+- New reference `references/pimcore-versions.md`: version matrix for 10.x, 11.x, 12.x, 2025.4 LTS and 2026.x, with sources.
+- `detect-project.sh` now reports `releaseLine`, `yearBased`, `studioPackages` and `adminUi`, and adds notes for both UIs installed, the 2025.4 LTS, the 2026 PHP, Symfony and `--install-profile` requirements, and a host PHP below 8.4.
+- `/pimcore` routes Studio features and platform upgrades to the new modules. `admin-ui-development` and `upgrade-migration` now separate classic UI work from Studio work.
+- `/pimcore-setup` notes the `--install-profile` requirement and the PHP 8.4 or 8.5 need for 2026 lines, and never prints a support date the docs do not state.
+- Agents (developer, solution-architect, upgrade-specialist) read the Studio and platform modules when the project needs them.
+- Tests: functional checks run `detect-project.sh` against classic, Studio-beside-classic and 2026 fixtures.
+- Not verified: the Studio JavaScript plugin registration API (the module points to the official example bundle), and the Windows and macOS setup routes on real machines.
+
 ## 0.1.7
 
 - `/pimcore-setup` for an existing project now runs a post-install list inside the PHP container: `composer install`, `cache:clear`, `pimcore:cache:clear`, `classes-rebuild -c -n`, `assets:install`. The `-d` flag (delete classes) is skipped and reported unless you approve it.

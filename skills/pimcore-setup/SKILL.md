@@ -65,6 +65,7 @@ How to fill the table (tested against real Packagist data):
 - The product-key column is not in Packagist. Mark it `yes` or `no` only when the installer `--help`, the release notes or the licence page says so. Otherwise print `unknown` and treat that row as not recommended. Pimcore 11 is the fallback recommended row when newer rows are `unknown`.
 - Rows whose PHP range excludes the host PHP (from the detect-env JSON) get the note `needs PHP <x>; Docker image provides it` when Docker is ready, or `not installable natively` otherwise.
 - Only the last 3 lines are shown, to keep the table short.
+- Notes column, from the official docs (see `TK/references/pimcore-versions.md`): the 2025 line is the LTS line (three years from its 2025-12-09 release) and the last one with the classic admin UI; 2026 lines need PHP 8.4 or 8.5, Symfony 7.x and `pimcore-install --install-profile <profile>`, and Pimcore Studio is the only admin UI. Add these notes only for rows you actually list. Never print a support date the docs do not state.
 
 Then continue with the recommended row unless `--plan` was given (stop here) or `--ask` was given (ask which row). To choose a different version, rerun with `--version <v>`.
 

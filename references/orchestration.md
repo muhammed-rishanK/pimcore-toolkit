@@ -22,6 +22,8 @@
 | "review my changes", "review this diff/PR" | Review | E | `code-review`, `security-best-practices` | `pimcore-code-reviewer`, QA only if the reviewer asks for runtime proof |
 | "write tests", "test this" | Testing | E' | `testing-validation` | `pimcore-qa-engineer` |
 | "upgrade", "compatibility", "deprecations" | Upgrade | F | `upgrade-migration`, `deployment-release` | `pimcore-upgrade-specialist`, architect for the plan, then developer, QA, reviewer only if the user asks to execute |
+| "upgrade to 2025.4", "LTS", "2026", "Pimcore 12", "move to Studio", "remove the classic UI" | Platform upgrade | F | `platform-2026-upgrade`, `upgrade-migration`, `studio-ui-development`, `studio-backend-extension` | `pimcore-upgrade-specialist` (reads `references/pimcore-versions.md`), architect for the phases and the Classic UI rewrite list, then developer, QA, reviewer only if the user asks to execute |
+| Studio plugin, Studio panel, Studio grid column, Studio API endpoint (project `adminUi` is `studio` or `both`) | Studio feature | A | `studio-ui-development`, `studio-backend-extension`, `backend-development` | architect (only if M or larger), `pimcore-developer`, `pimcore-qa-engineer`, `pimcore-code-reviewer` |
 | "prepare release", "deployment checklist" | Release | G | `deployment-release` | none, or `pimcore-code-reviewer` for a final diff check |
 | environment, install, Docker, "set up Pimcore" | Setup | none | none | tell the user to run `/pimcore-setup`; for a broken existing project, run `/pimcore-setup --repair` |
 
@@ -40,7 +42,7 @@ Agent names are `pimcore-toolkit:<agent>`.
 
 **E. Code review.** `pimcore-code-reviewer` on the diff the user named (default: `git diff` plus staged plus untracked files against the current branch base). Start QA only when a finding needs runtime proof. **E'** is the testing-only variant: `pimcore-qa-engineer` alone.
 
-**F. Upgrade.** (1) `pimcore-upgrade-specialist`: current versions, target, breaking changes, dependency and bundle compatibility, plan, rollback. (2) Architect turns it into phases. (3) Stop and report. Executing a major upgrade needs the user's explicit go-ahead in this conversation; then developer, QA and reviewer phase by phase.
+**F. Upgrade.** (1) `pimcore-upgrade-specialist`: current versions, target, breaking changes, dependency and bundle compatibility, plan, rollback. For 2025.4 or 2026 targets it reads `platform-2026-upgrade.md` and `references/pimcore-versions.md`, and the project's `adminUi`, `releaseLine` and `notes` from `detect-project.sh`. (2) Architect turns it into phases. (3) Stop and report. Executing a major upgrade needs the user's explicit go-ahead in this conversation; then developer, QA and reviewer phase by phase.
 
 **G. Release.** Use `deployment-release`: produce the deployment checklist from the diff (migrations, class rebuilds, cache, workers, config, rollback).
 

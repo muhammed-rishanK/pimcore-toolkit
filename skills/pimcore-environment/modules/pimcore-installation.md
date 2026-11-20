@@ -24,7 +24,7 @@ Choose the package and version, create the project, and run the Pimcore installe
 4. **Install** with the secrets passed on stdin so they never appear on a command line or in the process list:
    - Docker: `docker compose exec -T php sh -c 'set -a; . /dev/stdin; set +a; exec vendor/bin/pimcore-install --no-interaction' < .pimcore-setup/secrets.env`
    - Native: `( set -a; . .pimcore-setup/secrets.env; set +a; exec vendor/bin/pimcore-install --no-interaction )`
-   Add `--install-bundles=<list>` only for bundles the user wants (the installer lists installable bundles in `--help`).
+   Add `--install-bundles=<list>` only for bundles the user wants (the installer lists installable bundles in `--help`). On 2026.x add `--install-profile <profile>` with a name read from `--help` (see Version notes).
 5. **Database config**: the installer writes `config/local/database.yaml` with the DB password. Confirm `config/local/` is git-ignored (add it to `.gitignore` if not).
 6. **Post-install**: `bin/console cache:clear`; for Docker, confirm the `supervisord` service runs the workers.
 7. **Existing project**: never run the installer against a database that has data. Use an empty database for a fresh install, or import a dump the user provides (`database-provisioning.md`), then the **existing-project post-install steps** below.
@@ -59,7 +59,9 @@ Report each step as pass, fail or skipped with the reason.
 ## Version notes
 - Pimcore 10: installer at `vendor/bin/pimcore-install`, similar options; check `--help`.
 - Pimcore 11: same entry point; optional bundles can be installed with `--install-bundles`.
-- Later releases may change packages, licences and installer options; always run `--help` first.
+- 12.x and 2025.4 (LTS): same entry point; run `--help` for the options of the installed release.
+- 2026.1 and later: the official release notes say the installer now requires `--install-profile`, so the commands in the Workflow fail without it. Read `vendor/bin/pimcore-install --help` for the profile names and never guess one. These releases need PHP 8.4 or 8.5 and Symfony 7.x: use a `pimcore/pimcore` image with a matching PHP, not the host PHP. The Classic admin UI is gone; Pimcore Studio is the admin. Licence and product key rules are not stated in those notes, so apply the Licences rule in `SKILL.md`.
+- Facts and sources for every line: `references/pimcore-versions.md`.
 
 ## Example
 Skeleton, Docker, version `^11`:
