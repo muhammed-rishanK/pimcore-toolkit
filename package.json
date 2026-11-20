@@ -1,6 +1,6 @@
 {
   "name": "@muhammed-rishank/pimcore-toolkit",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Version-aware Claude Code plugin for Pimcore 10 to 2026: /pimcore, /pimcore-setup, specialist agents and an upgrade impact scan.",
   "keywords": [
     "pimcore",

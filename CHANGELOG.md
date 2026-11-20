@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.2
+
+Found by running the scan on a real project (a Pimcore 11 PIM with six git worktrees):
+
+- Fixed: the scan now skips `.claude/worktrees/`. Git worktrees hold full copies of the project, so each match was counted once per copy. On that project the totals fell from 2324 matches in 494 files to 390 in 121, and the 200-match cap per rule is no longer filled with duplicates.
+- Fixed: `ecommerce-tracking` is now `heuristic`, not `documented`. It matches the generic name `formatPrice(`, which a project's own code can define.
+- Test: a fixture file under `.claude/worktrees/` must not be matched.
+- Still true: matches marked `heuristic` are leads. The scan reports no deprecated PHP calls.
+
 ## 1.1.1
 
 - Added `package.json` and a GitHub Actions workflow (`.github/workflows/publish-package.yml`) that publishes the plugin files to GitHub Packages as `@muhammed-rishank/pimcore-toolkit` when a release is published. The workflow uses the built-in `GITHUB_TOKEN`, checks that the release tag matches the `package.json` version, and runs the structure tests first.

@@ -911,7 +911,7 @@
         "\\bgetCartValue\\(",
         "UniversalAnalytics"
       ],
-      "confidence": "documented",
+      "confidence": "heuristic",
       "advice": "TrackingManagerInterface gained methods, formatPrice() and getCartValue() return ?float, and GA4 replaces Universal Analytics. Add the methods and handle null.",
       "source": "https://docs.pimcore.com/platform/Pimcore_Platform/Updating_Pimcore/Release_Notes/03_2026.1/"
     },

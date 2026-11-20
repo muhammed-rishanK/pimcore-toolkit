@@ -46,7 +46,7 @@ if target not in steps:
 limit = steps.index(target)
 rules = [r for r in data["rules"] if steps.index(r["step"]) <= limit]
 
-SKIP_DIRS = {"vendor", "var", "node_modules", ".git", ".idea", ".vscode", "public/bundles", "public/var", "public/build"}
+SKIP_DIRS = {"vendor", "var", "node_modules", ".git", ".idea", ".vscode", ".claude/worktrees", "public/bundles", "public/var", "public/build"}
 KINDS = {
     "php": lambda n: n.endswith(".php"),
     "twig": lambda n: n.endswith((".twig", ".html.twig")),

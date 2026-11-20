@@ -231,6 +231,7 @@ proj = {
     "public/static/js/a.js": "Ext.define('x', {});\n",
     ".github/workflows/ci.yml": "run: vendor/bin/pimcore-install -n\nrun: vendor/bin/pimcore-install --install-profile x\n",
     "vendor/x/V.php": "<?php class V implements PimcoreBundleAdminClassicInterface {}\n",
+    ".claude/worktrees/t1/src/W.php": "<?php class W implements PimcoreBundleAdminClassicInterface {}\n",
 }
 rep, rc = scan(proj)
 check("_error" not in rep and rc == 0, f"scan fixture failed: {rep.get('_error')}")
@@ -240,7 +241,7 @@ if "_error" not in rep:
                 "install-without-profile", "templating-engine", "geoip"):
         check(rid in found, f"scan fixture: rule {rid} did not match")
     check(rep.get("readOnly") is True, "scan: readOnly flag missing")
-    check(found.get("classic-admin-interface", {}).get("total") == 1, "scan: vendor/ must be skipped")
+    check(found.get("classic-admin-interface", {}).get("total") == 1, "scan: vendor/ and .claude/worktrees must be skipped")
     check(found.get("install-without-profile", {}).get("total") == 1, "scan: the --install-profile line must not match")
     check(all(m["file"] != "src/Clean.php" for f in rep["findings"] for m in f["matches"]), "scan: clean file matched")
     check(rep["summary"]["filesAffected"] >= 4, "scan: summary filesAffected too low")
