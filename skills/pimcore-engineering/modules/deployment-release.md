@@ -18,7 +18,7 @@ Getting a Pimcore change safely from a branch to an environment: what to deploy,
 2. **Order the steps** (typical, adapt to the project):
    1. maintenance mode if needed (`bin/console pimcore:maintenance-mode --enable`; in Pimcore 11 other console commands then need `--ignore-maintenance-mode`; verify for the installed version);
    2. `composer install --no-dev --optimize-autoloader` (or build the image);
-   3. `bin/console doctrine:migrations:migrate --no-interaction`;
+   3. migrations: run only the versions this release adds, one by one: `bin/console doctrine:migrations:execute '<FQCN of the migration class>' --up --no-interaction` (read the class name from the file). Use `doctrine:migrations:migrate` only when the user wants every pending migration applied, after a database backup;
    4. `bin/console pimcore:deployment:classes-rebuild -c` (never `-d` unless deleting classes is intended and approved);
    5. one-off data commands, with dry-run first;
    6. `bin/console assets:install` with the project's flags;

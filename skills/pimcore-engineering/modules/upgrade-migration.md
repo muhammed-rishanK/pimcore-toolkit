@@ -24,7 +24,7 @@ Planning Pimcore, PHP, Symfony and bundle upgrades, and handling deprecations an
    - upgrade PHP within the current Pimcore's support range;
    - upgrade Pimcore (and Symfony with it);
    - enable or replace moved bundles;
-   - run migrations (`doctrine:migrations:migrate`), rebuild classes, clear caches, restart workers;
+   - run migrations (`doctrine:migrations:migrate` after a backup when the whole upgrade is intended; otherwise `doctrine:migrations:execute '<FQCN>' --up` per version), rebuild classes, clear caches, restart workers;
    - clean up compatibility layers.
 6. **Rollback** per phase: git revert, database backup taken before migrations, file and asset backup, previous Docker image.
 7. **Validation**: full test suite, smoke checks in the admin, imports, exports, integrations, performance comparison.

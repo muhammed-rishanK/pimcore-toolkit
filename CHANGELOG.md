@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+- `/pimcore-setup` for an existing project now runs a post-install list inside the PHP container: `composer install`, `cache:clear`, `pimcore:cache:clear`, `classes-rebuild -c -n`, `assets:install`. The `-d` flag (delete classes) is skipped and reported unless you approve it.
+- Migrations are no longer run in bulk. The toolkit lists pending ones and prints a targeted `doctrine:migrations:execute '<class>' --up --no-interaction` for each, with the real class name read from the file. It runs one only on your yes.
+- `/pimcore` agents report that targeted command for every migration they create, instead of `doctrine:migrations:migrate`.
+
 ## 0.1.6
 
 - macOS now installs Colima (free) through Homebrew instead of Docker Desktop. A Docker Desktop you already have is started, never installed.

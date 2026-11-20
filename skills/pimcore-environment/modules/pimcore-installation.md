@@ -27,8 +27,23 @@ Choose the package and version, create the project, and run the Pimcore installe
    Add `--install-bundles=<list>` only for bundles the user wants (the installer lists installable bundles in `--help`).
 5. **Database config**: the installer writes `config/local/database.yaml` with the DB password. Confirm `config/local/` is git-ignored (add it to `.gitignore` if not).
 6. **Post-install**: `bin/console cache:clear`; for Docker, confirm the `supervisord` service runs the workers.
-7. **Existing project**: never run the installer against a database that has data. Use an empty database for a fresh install, or import a dump the user provides (`database-provisioning.md`), then `bin/console doctrine:migrations:migrate`, `bin/console pimcore:deployment:classes-rebuild -c`, `bin/console cache:clear`.
+7. **Existing project**: never run the installer against a database that has data. Use an empty database for a fresh install, or import a dump the user provides (`database-provisioning.md`), then the **existing-project post-install steps** below.
 8. **Validate** with `setup-validation.md`.
+
+## Existing-project post-install steps
+Run these after the dump import (or after a fresh install of an existing codebase). On the Docker route run each inside the PHP container (`docker compose exec php <command>`), never on the host PHP, which may be the wrong version.
+1. `composer install` (add `--no-dev` only for non-development targets).
+2. `bin/console cache:clear`
+3. `bin/console pimcore:cache:clear` (`p:c:c`)
+4. `bin/console pimcore:deployment:classes-rebuild -c -n` (create missing classes, never delete).
+5. `bin/console assets:install public`
+6. **Migrations: list, never run all.** `bin/console doctrine:migrations:status` and `doctrine:migrations:list` show what is pending. Do not run `doctrine:migrations:migrate`: it applies every pending migration, including ones the user did not ask for. For each pending migration the user wants, print the targeted command with the real class name read from the migration file (never invented):
+   ```bash
+   bin/console doctrine:migrations:execute 'App\Migrations\Version20260817120000' --up --no-interaction
+   ```
+   Run it only on the user's yes for that exact version. Take the namespace from the file's `namespace` line or `config/packages/doctrine_migrations.yaml`.
+7. `-d` (delete classes without a definition file): skipped and reported. Run `pimcore:deployment:classes-rebuild -c -d -n` only when the user approves that exact target, for example in a project where `var/classes` is source-controlled and complete.
+Report each step as pass, fail or skipped with the reason.
 
 ## Best practices
 - Pin the version constraint you chose (`pimcore/skeleton:^11.0`, or an exact release when reproducibility matters).

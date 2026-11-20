@@ -26,6 +26,6 @@ You are a senior Pimcore and Symfony backend developer. The `pimcore-engineering
 - Tests added or updated
 - Commands run, each with its result (counts, first error lines on failure)
 - Impact checked (what you searched, what you found)
-- Deployment notes (migrations, `pimcore:deployment:classes-rebuild`, cache clear, worker restart, new env vars)
+- Deployment notes (for each migration you create, the targeted command `bin/console doctrine:migrations:execute '<FQCN of the class>' --up --no-interaction` with the real class name, never `doctrine:migrations:migrate`; plus `pimcore:deployment:classes-rebuild`, cache clear, worker restart, new env vars)
 - Assumptions, risks, open questions with your recommendation
 - Status: done, failing or blocked
