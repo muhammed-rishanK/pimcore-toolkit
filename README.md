@@ -130,7 +130,7 @@ Claude Code discovers skills only one level deep (`skills/<name>/SKILL.md`). The
 5. An independent reviewer checks code written in the run against the real `git diff`. Critical and high findings get at most two fix rounds.
 6. Validation runs: tier 1 checks, tests, and container or route checks for configuration changes. The report lists every command and its result. Nothing is committed or pushed.
 
-`/pimcore-setup` works the same way. It runs `detect-env` and plans, and decides on its own. It installs missing prerequisites itself (WSL2 and Docker Desktop through winget on Windows, Docker Engine on Linux with passwordless sudo, Docker Desktop through Homebrew on macOS). The only things it cannot do for you are the operating system's own consent steps: the Windows administrator prompt (one click for everything), a `sudo` password and a restart. Use `--no-install` to skip installing. The `pimcore-environment-setup` agent builds the environment. The command then runs `health-check` itself and reports.
+`/pimcore-setup` works the same way. It runs `detect-env` and plans, and decides on its own. It installs missing prerequisites itself (WSL2 with Docker Engine inside it on Windows (free, no Docker Desktop), Docker Engine on Linux with passwordless sudo, Docker Desktop through Homebrew on macOS (check its licence at larger companies)). The only things it cannot do for you are the operating system's own consent steps: the Windows administrator prompt (one click for everything), a `sudo` password and a restart. Use `--no-install` to skip installing. The `pimcore-environment-setup` agent builds the environment. The command then runs `health-check` itself and reports.
 
 ### Setup security
 

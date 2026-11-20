@@ -18,7 +18,7 @@ Create and run a Pimcore project with Docker the way the official skeleton and d
    docker run -u "$(id -u):$(id -g)" --rm -v "$PWD:/var/www/html" pimcore/pimcore:<tag> \
      composer create-project pimcore/skeleton:<constraint> <name>
    ```
-   On Windows PowerShell with Docker Desktop, omit `-u` and use `${PWD}`. On macOS, `-u` is optional.
+   On Windows, prefer the WSL route: run the same commands through `wsl -d Ubuntu -u dev --cd ~ --` with the project under `~/`. With a Docker Desktop the user already has, omit `-u` and use `${PWD}`. On macOS, `-u` is optional.
 3. **Secure the project before starting it**: run `gen-secrets.sh <project> --dev-login --compose` (see `environment-security.md`). It writes `.pimcore-setup/secrets.env` and `docker-compose.override.yaml` (both git-ignored, owner-only) with:
    - random database root and user passwords and a random admin user and password;
    - your host uid:gid for the PHP and supervisord services on Linux (the skeleton ships these `user:` lines commented out);

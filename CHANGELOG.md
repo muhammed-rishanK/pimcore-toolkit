@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5
+
+- Windows is now free: `install-prereqs.ps1` no longer installs Docker Desktop (paid licence at larger companies). It uses a Docker that already works, otherwise it installs WSL2 + Ubuntu and Docker Engine inside it. No licence or cost question is asked.
+- Windows administrator prompt appears only when WSL itself must be enabled.
+- Still untested on a real Windows machine; reports welcome.
+
 ## 0.1.4
 
 - `install-prereqs.sh` no longer treats an installed but stopped Docker as missing: it reports and starts it instead of reinstalling.

@@ -105,11 +105,11 @@ powershell -ExecutionPolicy Bypass -File "$SETUP_SCRIPTS/install-prereqs.ps1"
 ```
 Add `--check` (`-Check`) first if you only need to know what is missing. Read the JSON `status`:
 - `ready`: continue with Step 3.
-- `restart_required` (Windows): WSL2 and Docker Desktop are installed. Tell the user in one line that Windows must restart once (the OS requires it), give the exact command to run again afterwards, and stop. Everything chosen so far is repeatable because nothing was created.
+- `restart_required` (Windows): WSL2 and Ubuntu are installed (free; Docker Desktop is never installed, so there is no licence question). Tell the user in one line that Windows must restart once (the OS requires it), give the exact command to run again afterwards, and stop. Everything chosen so far is repeatable because nothing was created.
 - `needs_password` (Linux): `sudo` has no passwordless rule. Print the one command from the JSON under "Needs you".
 - `failed`: show the note, then use the native route if possible, otherwise report under "Needs you".
 
-On Windows the installer shows Windows' own administrator prompt once. The user clicks Yes; the plugin cannot and does not click it. With `--no-install`, skip this and list the commands instead.
+On Windows the installer uses a Docker already on the machine if one works, otherwise it sets up Docker Engine inside WSL2 (run project commands with `wsl -d Ubuntu -u dev --cd ~ -- <command>`, and keep the project in the WSL filesystem, not `/mnt/c`). Windows shows its own administrator prompt once, only when WSL must be enabled. The user clicks Yes; the plugin cannot and does not click it. With `--no-install`, skip this and list the commands instead.
 
 Pass `--ask` to turn the old behaviour back on: the command then stops and asks at each row above instead of deciding.
 

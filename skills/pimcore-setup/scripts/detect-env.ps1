@@ -17,7 +17,7 @@ if (Tool docker) {
   $docker.version = Run docker @('version', '--format', '{{.Client.Version}}')
   & docker info *> $null; if ($LASTEXITCODE -eq 0) { $docker.daemonRunning = $true }
   $cv = Run docker @('compose', 'version', '--short'); if ($cv) { $docker.composeV2 = $cv }
-  if (-not $docker.daemonRunning) { $warn += 'docker installed but daemon not reachable (start Docker Desktop)' }
+  if (-not $docker.daemonRunning) { $warn += 'docker installed but daemon not reachable (start Docker, or run install-prereqs.ps1)' }
   if (-not $docker.composeV2) { $warn += 'docker compose v2 missing' }
 }
 if (Tool docker-compose) { $docker.composeV1Present = $true }
@@ -48,7 +48,7 @@ if (Test-Path $abs -PathType Container) {
 }
 if ($abs -match ' ') { $warn += 'target path contains spaces' }
 if ($arch -match 'ARM') { $warn += 'ARM CPU: confirm the Docker image tags support arm64' }
-if (-not (Tool wsl)) { $warn += 'WSL not found: Pimcore development on Windows needs WSL2 or Docker Desktop with the WSL2 backend' }
+if (-not (Tool wsl)) { $warn += 'WSL not found: Pimcore development on Windows needs WSL2 (run install-prereqs.ps1; free)' }
 
 $drive = (Get-Item $(if ($target.exists) { $abs } else { Split-Path $abs -Parent }) -ErrorAction SilentlyContinue).PSDrive
 $out = [ordered]@{
