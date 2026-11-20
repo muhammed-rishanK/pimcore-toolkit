@@ -4,7 +4,8 @@
 #   --check   report what is missing; change nothing
 # Linux uses the distribution package manager through "sudo -n" (passwordless sudo only).
 # If sudo needs a password, nothing is changed and the exact command is printed, because
-# the system password is never read or bypassed. macOS needs Docker Desktop (brew cask).
+# the system password is never read or bypassed. macOS uses Colima (free, no Docker Desktop
+# licence) through Homebrew; a Docker Desktop the user already has is started, never installed.
 # Output: one JSON object. status: ready | needs_password | unsupported | failed | check.
 set -u
 CHECK=0; [ "${1:-}" = "--check" ] && CHECK=1
@@ -16,9 +17,9 @@ if dock_ok && docker compose version >/dev/null 2>&1; then js ready "" ""; exit 
 OS="$(uname -s)"
 # Installed but the daemon is stopped: start it, never reinstall.
 if have docker && docker compose version >/dev/null 2>&1; then
-  if [ "$OS" = Darwin ]; then START="open -a Docker"; else START="systemctl enable --now docker"; fi
+  if [ "$OS" = Darwin ]; then if have colima; then START="colima start"; else START="open -a Docker"; fi; else START="systemctl enable --now docker"; fi
   [ "$CHECK" = 1 ] && { js check "Docker is installed but not running" "$START"; exit 0; }
-  if [ "$OS" = Darwin ]; then open -a Docker >/dev/null 2>&1
+  if [ "$OS" = Darwin ]; then $START >/dev/null 2>&1
   elif [ "$(id -u)" = 0 ]; then systemctl enable --now docker >/dev/null 2>&1
   elif sudo -n true 2>/dev/null; then sudo -n systemctl enable --now docker >/dev/null 2>&1
   else js needs_password "Docker is installed but stopped; sudo needs a password, which the plugin never reads" "sudo $START"; exit 2; fi
@@ -26,13 +27,17 @@ if have docker && docker compose version >/dev/null 2>&1; then
   js failed "Docker did not become ready" "$START"; exit 1
 fi
 if [ "$OS" = Darwin ]; then
-  [ "$CHECK" = 1 ] && { js check "Docker Desktop missing" "brew install --cask docker"; exit 0; }
+  [ "$CHECK" = 1 ] && { js check "Docker missing (free route: Colima)" "brew install colima docker docker-compose && colima start"; exit 0; }
   if have brew; then
-    brew install --cask docker >/dev/null 2>&1 && open -a Docker >/dev/null 2>&1
-    for _ in $(seq 1 60); do dock_ok && { js ready "" ""; exit 0; }; sleep 5; done
-    js failed "Docker Desktop did not become ready; open it once to accept its terms" "open -a Docker"; exit 1
+    brew install colima docker docker-compose >/dev/null 2>&1
+    # The compose formula must be linked as a docker CLI plugin to give "docker compose".
+    mkdir -p "$HOME/.docker/cli-plugins"
+    ln -sfn "$(brew --prefix)/opt/docker-compose/bin/docker-compose" "$HOME/.docker/cli-plugins/docker-compose"
+    colima start >/dev/null 2>&1
+    for _ in $(seq 1 24); do dock_ok && docker compose version >/dev/null 2>&1 && { js ready "Docker runs through Colima" ""; exit 0; }; sleep 5; done
+    js failed "Colima did not become ready" "colima start"; exit 1
   fi
-  js unsupported "Homebrew not found" "install Homebrew, then: brew install --cask docker"; exit 1
+  js unsupported "Homebrew not found" "install Homebrew, then: brew install colima docker docker-compose && colima start"; exit 1
 fi
 # Linux
 if have apt-get; then CMD="apt-get update && apt-get install -y docker.io docker-compose-v2"

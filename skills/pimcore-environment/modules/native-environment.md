@@ -16,7 +16,7 @@ Run Pimcore without Docker: PHP with the required extensions, Composer, a MariaD
 2. **Missing software**: give the user the install commands for their OS and wait. Examples (verify package names for their release):
    - Ubuntu or Debian: `sudo apt install php8.x-{cli,fpm,intl,mysql,mbstring,xml,zip,gd,curl,bcmath} mariadb-server redis-server composer` (versions depend on the distribution or a PPA).
    - macOS: `brew install php composer mariadb redis`, then `brew services start mariadb`.
-   - Windows: not supported natively in practice; use WSL2 (Ubuntu) and follow the Linux steps inside it, or Docker Desktop.
+   - Windows: not supported natively in practice; use WSL2 (Ubuntu) and follow the Linux steps inside it.
 3. **Database**: create the database and a dedicated user with `database-provisioning.md`.
 4. **Create the project**: `composer create-project pimcore/skeleton:<constraint> <name>` in an empty folder.
 5. **Secrets**: `gen-secrets.sh <project> --dev-login` (no `--compose`), then install with `pimcore-installation.md`, using `mysql-host-socket` = `127.0.0.1` (or the socket path) and the generated credentials.

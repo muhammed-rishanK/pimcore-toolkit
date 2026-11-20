@@ -22,7 +22,7 @@ Diagnose and repair a Pimcore development environment that fails a health check,
 ## Symptoms and fixes
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| `docker: Cannot connect to the Docker daemon` | Docker not running | User starts Docker Desktop or `sudo systemctl start docker` (user runs it) |
+| `docker: Cannot connect to the Docker daemon` | Docker not running | Linux: `sudo systemctl start docker`; macOS: `colima start`; Windows: `wsl -d Ubuntu -u root -- service docker start` (or start the Docker Desktop you already have) |
 | `port is already allocated` | another service on the port | Change this project's port mapping; do not stop the other service |
 | `Permission denied` on `var/` or `public/var` | files owned by root or the wrong uid | Set the uid:gid in the override, then `docker compose run --rm -u 0 php chown -R <uid>:<gid> var public/var` (approval) |
 | `SQLSTATE[HY000] [1045] Access denied` | credentials in `database.yaml` do not match the DB (often a reused volume) | Compare with `secrets.env` (without printing); propose resetting the DB user password inside the container (approval), not deleting the volume |

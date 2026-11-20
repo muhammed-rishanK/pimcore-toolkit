@@ -3,6 +3,7 @@
 ## 0.1.5
 
 - Windows is now free: `install-prereqs.ps1` no longer installs Docker Desktop (paid licence at larger companies). It uses a Docker that already works, otherwise it installs WSL2 + Ubuntu and Docker Engine inside it. No licence or cost question is asked.
+- macOS now installs Colima (free) through Homebrew instead of Docker Desktop. A Docker Desktop you already have is started, never installed.
 - Windows administrator prompt appears only when WSL itself must be enabled.
 - Still untested on a real Windows machine; reports welcome.
 

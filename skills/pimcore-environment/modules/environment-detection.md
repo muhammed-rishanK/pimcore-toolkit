@@ -19,7 +19,7 @@ It prints JSON with: `os`, `osDetail`, `arch`, `cpus`, `memGB`, `diskFreeGB`, `d
    - **Ready for Docker**: Docker installed, daemon running, Compose v2, memory 4 GB or more for the containers, 5 GB free disk or more, a free HTTP port.
    - **Ready for native**: PHP version within the target Pimcore range, required extensions, Composer 2, a reachable MariaDB or MySQL server and credentials to create a database, 3 GB free disk.
    - **Blocked**: list exactly what is missing and the command or download the user needs (do not install it yourself).
-3. Flag path problems: on WSL2, a target under `/mnt/c` (slow file access; recommend `~/projects/<name>`); on Windows, paths with spaces; on macOS, a folder not shared with Docker Desktop.
+3. Flag path problems: on WSL2, a target under `/mnt/c` (slow file access; recommend `~/projects/<name>`); on Windows, paths with spaces; on macOS, a folder not shared with the Docker VM (Colima or Docker Desktop).
 4. Flag architecture: Apple Silicon and ARM Linux need images with arm64 support; confirm the image tag supports the platform or plan `platform: linux/amd64` with a performance warning.
 5. If the target is an existing Pimcore project (`isPimcore: true`), switch to the existing-project profile.
 
