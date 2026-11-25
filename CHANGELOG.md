@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.2.0
+
+New commands:
+- `/pimcore-review`: code review of the uncommitted changes and everything they affect (callers, services, events, Twig, admin JS, DataHub and import configs, class definitions). `--staged`, `--base <branch>`, `--all` (whole codebase, split over up to four reviewers) and `--focus security|performance|data|upgrade`. Each finding is numbered and shows the severity, `file:line`, the real lines of code with the causing line marked, why it is a problem, the fix as code and a test plan. Critical and high findings are checked against the file before they are reported. Read-only. Scope script: `skills/pimcore-review/scripts/review-scope.sh`.
+- Automatic review: a Stop hook (`hooks/hooks.json`, `hooks/auto-review.sh`) asks for `/pimcore-review` when Claude has changed code in a Pimcore project. It reacts only to code files, runs once per new set of changes, never loops and writes one state file inside `.git`. Off with `PIMCORE_AUTO_REVIEW=0` or `git config pimcore.autoReview false`.
+- `/pimcore-doctor`: a read-only audit of an existing project (lock file, PHP platform, tracked secrets, plain passwords in config, `.gitignore`, class definitions, worktree, debug settings, workers, tooling, CI, upgrade impact, auto-update status, and composer advisories with `--online`). Each check gives pass, warn, fail or skip with the evidence and the fix.
+
+Automatic updates:
+- `skills/pimcore/scripts/enable-auto-update.sh` turns on auto-update for this marketplace in `~/.claude/settings.json` (with a backup), `--check` shows the status, `--off` turns it off. It warns when `DISABLE_AUTOUPDATER`, `DISABLE_UPDATES` or `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` blocks updates and names `FORCE_AUTOUPDATE_PLUGINS=1`. Claude Code keeps auto-update off for third-party marketplaces until each user turns it on, so the plugin cannot do it for them.
+
+`/pimcore-setup`:
+- After Docker is installed and the user is added to the `docker` group, Docker runs through `sg docker -c`, so no logout or restart is needed. `install-prereqs.sh` reports this as `dockerCmd`, and `health-check.sh` takes `--docker-cmd`.
+- The `sudo` password step opens the command in a terminal tab where the user types it (the plugin never types or reads it), then the run continues.
+- On Windows with Docker Engine inside WSL, the scripts run inside WSL themselves; `detect-env.ps1` reports `wslDocker`.
+- The data migration step uses targeted `doctrine:migrations:execute` commands instead of a stale generic command.
+
+Other:
+- `GUIDE.md`, a step-by-step user guide.
+- CI workflow (`.github/workflows/ci.yml`) on every push and pull request: structure tests, bash syntax, JSON validity, version match between `plugin.json` and `package.json`, and ShellCheck (errors only, reported without failing the run).
+- The code reviewer agent and the review output format now require the five-part finding.
+- Tests for the hook (no changes, non-code change, code change, no second review, no loop, both off switches, outside git), the review scope, the auto-update helper on a scratch config folder and the `dockerCmd` field.
+- Not tested: the PowerShell scripts were not run (no PowerShell on the test machine).
+
 ## 1.1.2
 
 Found by running the scan on a real project (a Pimcore 11 PIM with six git worktrees):

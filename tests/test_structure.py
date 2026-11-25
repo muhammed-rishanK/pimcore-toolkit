@@ -70,6 +70,8 @@ check(os.path.exists(os.path.join(ROOT, ".claude-plugin/marketplace.json")), "ma
 skills = {
     "pimcore": {"disable-model-invocation": "true"},
     "pimcore-setup": {"disable-model-invocation": "true"},
+    "pimcore-doctor": {"disable-model-invocation": "true"},
+    "pimcore-review": {"disable-model-invocation": "true"},
     "pimcore-engineering": {"user-invocable": "false"},
     "pimcore-environment": {"user-invocable": "false"},
 }
@@ -83,7 +85,7 @@ for name, need in skills.items():
     check(len(fm.get("description", "")) > 40, f"{path}: description too short")
     for k, v in need.items():
         check(fm.get(k) == v, f"{path}: {k} must be {v}")
-    if name in ("pimcore", "pimcore-setup"):
+    if name in ("pimcore", "pimcore-setup", "pimcore-doctor", "pimcore-review"):
         check("argument-hint" in fm, f"{path}: argument-hint missing")
         check("$ARGUMENTS" in read(path), f"{path}: must use $ARGUMENTS")
 
@@ -122,8 +124,9 @@ check(on_disk == sorted(AGENTS), f"agents on disk {on_disk} differ from expected
 all_mods = set(DEV_MODULES + SETUP_MODULES)
 known_docs = {"SKILL", "CLAUDE", "README", "orchestration", "output-formats", "scenarios", "pimcore-versions"}
 skip_prefix = ("pimcore-engineering", "pimcore-environment", "pimcore-setup", "pimcore-toolkit",
-               "pimcore-install", "pimcore-doctor", "pimcore-architecture", "pimcore-app")
+               "pimcore-install", "pimcore-doctor", "pimcore-review", "pimcore-architecture", "pimcore-app")
 for p in ["skills/pimcore/SKILL.md", "skills/pimcore-setup/SKILL.md", "references/orchestration.md",
+          "skills/pimcore-doctor/SKILL.md", "skills/pimcore-review/SKILL.md",
           "skills/pimcore-engineering/SKILL.md", "skills/pimcore-environment/SKILL.md"] + \
          [f"agents/{a}.md" for a in AGENTS]:
     text = read(p)
@@ -137,7 +140,9 @@ for p in ["skills/pimcore/SKILL.md", "skills/pimcore-setup/SKILL.md", "reference
 # 6. scripts
 scripts = ["skills/pimcore/scripts/detect-project.sh", "skills/pimcore-setup/scripts/detect-env.sh",
            "skills/pimcore-setup/scripts/gen-secrets.sh", "skills/pimcore-setup/scripts/health-check.sh",
-           "skills/pimcore-setup/scripts/install-prereqs.sh", "skills/pimcore/scripts/scan-platform-impact.sh"]
+           "skills/pimcore-setup/scripts/install-prereqs.sh", "skills/pimcore/scripts/scan-platform-impact.sh",
+           "skills/pimcore/scripts/enable-auto-update.sh", "skills/pimcore-doctor/scripts/doctor.sh",
+           "skills/pimcore-review/scripts/review-scope.sh", "hooks/auto-review.sh"]
 for s in scripts:
     r = subprocess.run(["bash", "-n", os.path.join(ROOT, s)], capture_output=True)
     check(r.returncode == 0, f"{s}: bash syntax error {r.stderr.decode()[:200]}")
@@ -304,6 +309,109 @@ try:
     check(rel.returncode == 0 and rel_rep["root"].endswith("/references"), "scan: relative script path and root must work")
 except Exception:
     check(False, f"scan: relative path run failed: {(rel.stdout + rel.stderr)[:200]}")
+
+# 6e. hooks: valid JSON, both events point at the auto-review script
+hk = json.loads(read("hooks/hooks.json"))
+for ev, mode in (("SessionStart", "baseline"), ("Stop", "stop")):
+    cmds = [h.get("command", "") for g in hk.get("hooks", {}).get(ev, []) for h in g.get("hooks", [])]
+    check(any("${CLAUDE_PLUGIN_ROOT}/hooks/auto-review.sh" in c and c.endswith(mode) for c in cmds),
+          f"hooks.json: {ev} must run auto-review.sh {mode}")
+
+# 6f. auto-review hook and review-scope on a throwaway git repository
+GENV = dict(os.environ, GIT_AUTHOR_NAME="t", GIT_AUTHOR_EMAIL="t@example.invalid",
+            GIT_COMMITTER_NAME="t", GIT_COMMITTER_EMAIL="t@example.invalid", PIMCORE_AUTO_REVIEW="1")
+HOOK = os.path.join(ROOT, "hooks/auto-review.sh")
+SCOPE = os.path.join(ROOT, "skills/pimcore-review/scripts/review-scope.sh")
+
+
+def hook(d, mode, active=False):
+    payload = json.dumps({"cwd": d, "stop_hook_active": active})
+    r = subprocess.run(["bash", HOOK, mode], input=payload, capture_output=True, text=True, env=GENV)
+    return r.returncode, r.stdout.strip()
+
+
+with tempfile.TemporaryDirectory() as d:
+    def w(rel, text):
+        p = os.path.join(d, rel)
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, "w") as fh:
+            fh.write(text)
+    w("composer.json", json.dumps({"require": {"pimcore/pimcore": "^11.0"}}))
+    w("src/A.php", "<?php\nclass A {}\n")
+    for c in (["init", "-q", "-b", "feature/test"], ["add", "-A"], ["commit", "-q", "-m", "init"]):
+        subprocess.run(["git", *c], cwd=d, env=GENV, capture_output=True)
+    hook(d, "baseline")
+    check(hook(d, "stop") == (0, ""), "auto-review: no changes must not block")
+    w("README.txt", "notes\n")
+    check(hook(d, "stop")[1] == "", "auto-review: a non-code change must not block")
+    w("src/A.php", "<?php\nclass A { public function x() {} }\n")
+    rc, out = hook(d, "stop")
+    try:
+        dec = json.loads(out)
+    except Exception:
+        dec = {}
+    check(rc == 0 and dec.get("decision") == "block" and "pimcore-review" in dec.get("reason", ""),
+          f"auto-review: a code change must ask for a review: {out[:200]}")
+    check(hook(d, "stop")[1] == "", "auto-review: the same changes must not be reviewed twice")
+    w("src/B.php", "<?php\nclass B {}\n")
+    check(hook(d, "stop", active=True)[1] == "", "auto-review: stop_hook_active must never block (no loop)")
+    w("src/C.php", "<?php\nclass C {}\n")
+    off = subprocess.run(["bash", HOOK, "stop"], input=json.dumps({"cwd": d}), capture_output=True, text=True,
+                         env=dict(GENV, PIMCORE_AUTO_REVIEW="0"))
+    check(off.stdout.strip() == "", "auto-review: PIMCORE_AUTO_REVIEW=0 must turn it off")
+    subprocess.run(["git", "config", "pimcore.autoReview", "false"], cwd=d, env=GENV)
+    check(hook(d, "stop")[1] == "", "auto-review: git config pimcore.autoReview false must turn it off")
+
+    sc = subprocess.run(["bash", SCOPE, d], capture_output=True, text=True, env=GENV)
+    try:
+        scope = json.loads(sc.stdout)
+        paths = {f["path"]: f["status"] for f in scope["files"]}
+        check(paths.get("src/A.php") == "M" and paths.get("src/B.php") == "A", f"review-scope: wrong files {paths}")
+        check("README.txt" not in paths, "review-scope: non-code files must be skipped")
+    except Exception:
+        check(False, f"review-scope changes mode failed: {(sc.stdout + sc.stderr)[:200]}")
+    sa = subprocess.run(["bash", SCOPE, d, "--all"], capture_output=True, text=True, env=GENV)
+    try:
+        allj = json.loads(sa.stdout)
+        check(allj["mode"] == "all" and any(g["folder"] == "src" for g in allj["groups"]), "review-scope --all: groups missing")
+    except Exception:
+        check(False, f"review-scope --all failed: {(sa.stdout + sa.stderr)[:200]}")
+    bad = subprocess.run(["bash", SCOPE, d, "--bogus"], capture_output=True, text=True)
+    check(bad.returncode == 2, "review-scope: unknown option must exit 2")
+
+with tempfile.TemporaryDirectory() as d:
+    hook_out = hook(d, "stop")
+    check(hook_out == (0, ""), "auto-review: outside a git repository it must do nothing")
+
+# 6g. enable-auto-update.sh on a scratch config folder (never the real ~/.claude)
+EAU = os.path.join(ROOT, "skills/pimcore/scripts/enable-auto-update.sh")
+with tempfile.TemporaryDirectory() as cfg:
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("DISABLE_AUTOUPDATER", "DISABLE_UPDATES", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC")}
+    env["CLAUDE_CONFIG_DIR"] = cfg
+    with open(os.path.join(cfg, "settings.json"), "w") as fh:
+        json.dump({"theme": "dark"}, fh)
+    r = subprocess.run(["bash", EAU], capture_output=True, text=True, env=env)
+    st = json.loads(open(os.path.join(cfg, "settings.json")).read()) if r.returncode == 0 else {}
+    mk = st.get("extraKnownMarketplaces", {}).get("pimcore-toolkit", {})
+    check(mk.get("autoUpdate") is True and st.get("theme") == "dark", f"enable-auto-update: on failed: {r.stdout[:200]}")
+    check(mk.get("source", {}).get("repo") == "muhammed-rishanK/pimcore-toolkit", "enable-auto-update: wrong source repo")
+    r = subprocess.run(["bash", EAU, "--check"], capture_output=True, text=True, env=env)
+    check('"on"' in r.stdout, f"enable-auto-update --check must report on: {r.stdout[:200]}")
+    subprocess.run(["bash", EAU, "--off"], capture_output=True, text=True, env=env)
+    st = json.loads(open(os.path.join(cfg, "settings.json")).read())
+    check(st["extraKnownMarketplaces"]["pimcore-toolkit"]["autoUpdate"] is False, "enable-auto-update --off failed")
+    r = subprocess.run(["bash", EAU, "--bogus"], capture_output=True, text=True, env=env)
+    check(r.returncode == 2, "enable-auto-update: unknown option must exit 2")
+
+# 6h. install-prereqs --check reports how to call docker
+r = subprocess.run(["bash", os.path.join(ROOT, "skills/pimcore-setup/scripts/install-prereqs.sh"), "--check"],
+                   capture_output=True, text=True, timeout=120)
+try:
+    ip = json.loads(r.stdout)
+    check("status" in ip and "dockerCmd" in ip, f"install-prereqs --check: status or dockerCmd missing: {list(ip)}")
+except Exception:
+    check(False, f"install-prereqs --check: not JSON: {(r.stdout + r.stderr)[:200]}")
 
 # 7. writing style over shipped files
 for dirpath, _, files in os.walk(ROOT):

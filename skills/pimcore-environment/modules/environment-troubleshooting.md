@@ -22,6 +22,7 @@ Diagnose and repair a Pimcore development environment that fails a health check,
 ## Symptoms and fixes
 | Symptom | Likely cause | Fix |
 |---|---|---|
+| `permission denied while trying to connect to the Docker daemon socket` | user not in the `docker` group, or this shell started before it was added | `install-prereqs.sh` adds the group (sudo password typed by the user in a terminal tab) and returns `dockerCmd`; use `sg docker -c "docker ..."` until the next login. No logout needed |
 | `docker: Cannot connect to the Docker daemon` | Docker not running | Linux: `sudo systemctl start docker`; macOS: `colima start`; Windows: `wsl -d Ubuntu -u root -- service docker start` (or start the Docker Desktop you already have) |
 | `port is already allocated` | another service on the port | Change this project's port mapping; do not stop the other service |
 | `Permission denied` on `var/` or `public/var` | files owned by root or the wrong uid | Set the uid:gid in the override, then `docker compose run --rm -u 0 php chown -R <uid>:<gid> var public/var` (approval) |

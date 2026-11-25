@@ -39,7 +39,7 @@ Checkpoint: <where the run will stop or ask, if anywhere>
 4. Medium and low findings
 5. Regression risks (what to re-check)
 6. Final recommendation
-Each finding: `path:line`, what is wrong, the concrete scenario where it fails, the suggested fix.
+Each finding: `path:line`, the lines of code that cause it (2 to 6 real lines with line numbers, the causing line marked `<- issue`), what is wrong and the concrete scenario where it fails, the suggested fix as code, and a test plan (test to add, command to run, manual check). `/pimcore-review` uses this format with numbered findings.
 
 ## Architecture
 1. Business requirement

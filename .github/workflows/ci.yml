@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Structure, script and style tests
+        run: python3 tests/test_structure.py
+      - name: Bash syntax
+        run: |
+          set -e
+          find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 -n1 bash -n
+      - name: JSON files are valid
+        run: |
+          set -e
+          for f in .claude-plugin/plugin.json .claude-plugin/marketplace.json hooks/hooks.json package.json skills/pimcore/scripts/platform-impact-rules.json; do
+            python3 -m json.tool "$f" >/dev/null
+          done
+      - name: Plugin version matches package.json
+        run: |
+          a=$(python3 -c 'import json;print(json.load(open(".claude-plugin/plugin.json"))["version"])')
+          b=$(python3 -c 'import json;print(json.load(open("package.json"))["version"])')
+          test "$a" = "$b" || { echo "plugin.json $a != package.json $b"; exit 1; }
+      - name: ShellCheck (errors only, report without failing)
+        continue-on-error: true
+        run: |
+          find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 shellcheck -S error

@@ -5,8 +5,9 @@
 # Never prints secrets; output lines containing a value from
 # .pimcore-setup/secrets.env are masked. Exit 0 only if checks 1-4 pass.
 # Usage: health-check.sh --dir <project> [--runtime docker|native] [--url http://localhost:8080] [--php-service php] [--json]
+#        [--docker-cmd "docker"|"sg docker -c"|"sudo -n docker"]   (default: detected, see install-prereqs.sh)
 
-DIR="."; RUNTIME=""; URL=""; PHPSVC="php"; JSON=0
+DIR="."; RUNTIME=""; URL=""; PHPSVC="php"; JSON=0; DK=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --dir) DIR="$2"; shift 2 ;;
@@ -14,17 +15,34 @@ while [ $# -gt 0 ]; do
     --url) URL="${2%/}"; shift 2 ;;
     --php-service) PHPSVC="$2"; shift 2 ;;
     --json) JSON=1; shift ;;
-    -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
+    --docker-cmd) DK="$2"; shift 2 ;;
+    -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
     *) shift ;;
   esac
 done
 cd "$DIR" 2>/dev/null || { echo "project folder not found: $DIR" >&2; exit 2; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# Call docker the way this session can reach it: directly, through "sg docker" (user was just
+# added to the docker group, no logout needed) or through passwordless sudo.
+if [ -z "$DK" ] && have docker; then
+  if docker info >/dev/null 2>&1; then DK="docker"
+  elif have sg && id -nG 2>/dev/null | grep -qw docker && sg docker -c "docker info" >/dev/null 2>&1; then DK="sg docker -c"
+  elif sudo -n docker info >/dev/null 2>&1; then DK="sudo -n docker"
+  else DK="docker"; fi
+fi
+dk() {
+  case "$DK" in
+    "sg docker -c") sg docker -c "docker $(printf '%q ' "$@")" ;;
+    "sudo -n docker") sudo -n docker "$@" ;;
+    *) docker "$@" ;;
+  esac
+}
+
 COMPOSE_FILE=""
 for f in docker-compose.yaml docker-compose.yml compose.yaml compose.yml; do [ -f "$f" ] && { COMPOSE_FILE="$f"; break; }; done
 if [ -z "$RUNTIME" ]; then
-  if [ -n "$COMPOSE_FILE" ] && have docker && docker compose ps -q "$PHPSVC" 2>/dev/null | grep -q .; then RUNTIME=docker; else RUNTIME=native; fi
+  if [ -n "$COMPOSE_FILE" ] && have docker && dk compose ps -q "$PHPSVC" 2>/dev/null | grep -q .; then RUNTIME=docker; else RUNTIME=native; fi
 fi
 
 # Secret masking
@@ -37,7 +55,7 @@ fi
 mask() { local s="$1" m; for m in "${MASKS[@]}"; do s="${s//"$m"/****}"; done; printf '%s' "$s"; }
 
 run_console() { # run bin/console in the right runtime, quietly
-  if [ "$RUNTIME" = docker ]; then docker compose exec -T "$PHPSVC" php bin/console "$@" 2>&1
+  if [ "$RUNTIME" = docker ]; then dk compose exec -T "$PHPSVC" php bin/console "$@" 2>&1
   else php bin/console "$@" 2>&1; fi
 }
 
@@ -74,7 +92,7 @@ fi
 
 # Base URL
 if [ -z "$URL" ] && [ "$RUNTIME" = docker ] && [ -n "$COMPOSE_FILE" ]; then
-  hp=$(docker compose port nginx 80 2>/dev/null | head -1 | awk -F: '{print $NF}')
+  hp=$(dk compose port nginx 80 2>/dev/null | head -1 | awk -F: '{print $NF}')
   [ -n "$hp" ] && URL="http://localhost:$hp"
 fi
 TMPB=$(mktemp 2>/dev/null || echo "${TMPDIR:-/tmp}/.pchk.$$")
@@ -103,8 +121,8 @@ rm -f "$TMPB"
 # 5 Optional services
 opt=""; ofail=0
 if [ "$RUNTIME" = docker ]; then
-  for s in $(docker compose config --services 2>/dev/null); do
-    st=$(docker compose ps --format '{{.State}}' "$s" 2>/dev/null | head -1)
+  for s in $(dk compose config --services 2>/dev/null); do
+    st=$(dk compose ps --format '{{.State}}' "$s" 2>/dev/null | head -1)
     opt="$opt$s:${st:-not running} "
     case "$s" in redis|supervisord|opensearch|elasticsearch|mailpit|mailhog) [ "$st" = running ] || ofail=1 ;; esac
   done

@@ -25,4 +25,4 @@ The `pimcore-engineering` skill is preloaded. Read `code-review.md` and `securit
 - Say clearly when there are no significant issues.
 
 ## Return
-Use the "Code review" format: overall assessment and verdict, critical, high, medium and low findings (each with `path:line`, problem, failure scenario, suggested fix), regression risks, final recommendation. Then the handback.
+Use the "Code review" format: overall assessment and verdict, critical, high, medium and low findings, regression risks, final recommendation. Each finding has five parts: `path:line`; the real lines of code from the file (2 to 6, with line numbers, the causing line marked `<- issue`); why it is a problem, with the concrete failure scenario; the smallest fix as code; and a test plan (the test to add with the input that fails today, the command to run it, any manual admin check). Then the handback.

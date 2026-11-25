@@ -105,12 +105,32 @@ bash "$SETUP_SCRIPTS/install-prereqs.sh"
 powershell -ExecutionPolicy Bypass -File "$SETUP_SCRIPTS/install-prereqs.ps1"
 ```
 Add `--check` (`-Check`) first if you only need to know what is missing. Read the JSON `status`:
-- `ready`: continue with Step 3.
+- `ready`: continue with Step 3. Read `dockerCmd` and use it for every Docker call in this run, and pass it to the agent and to `health-check.sh --docker-cmd`:
+  - `docker`: call `docker` as usual.
+  - `sg docker -c`: the user was just added to the `docker` group and this session started before that. Wrap each call, for example `sg docker -c "docker compose up -d"`. No logout or restart is needed.
+  - `sudo -n docker`: passwordless sudo; prefix each call.
 - `restart_required` (Windows): WSL2 and Ubuntu are installed (free; Docker Desktop is never installed, so there is no licence question). Tell the user in one line that Windows must restart once (the OS requires it), give the exact command to run again afterwards, and stop. Everything chosen so far is repeatable because nothing was created.
-- `needs_password` (Linux): `sudo` has no passwordless rule. Print the one command from the JSON under "Needs you".
+- `needs_password` (Linux or macOS): `sudo` has no passwordless rule. Do not stop at printing the command. Use the terminal route below, then run `install-prereqs.sh` again and continue from its new status.
+
+#### Terminal route for the sudo password
+The password is typed by the user, in a real terminal, never by the plugin. Make that one step as short as possible:
+1. If a terminal tool is available (in the Claude desktop app: `mcp__terminal__run_in_terminal`, or `mcp__terminal__open_terminal_tab` then `run_in_terminal`; load it with ToolSearch if it is deferred), run the exact `command` from the JSON there. Tell the user in one line: "A terminal tab is asking for your sudo password; type it there and press Enter." Then read that tab with `mcp__terminal__read_terminal` (with `wait_for_output_ms`) until the command has finished. Never type into the password prompt and never read the password back.
+2. Without a terminal tool, show the command under "Needs you" and tell the user they can run it in the prompt box with the `!` prefix (for example `! sudo sh -c '...'`), which runs it in their own shell where they type the password. Wait for them to say it is done.
+3. Run `install-prereqs.sh` again. It now returns `ready` with a `dockerCmd`, usually `sg docker -c` right after the group change, so the run goes on without a logout.
+4. If it still returns `needs_password` after the user ran the command, report the status and the note, and stop the Docker route (native route if possible).
 - `failed`: show the note, then use the native route if possible, otherwise report under "Needs you".
 
-On Windows the installer uses a Docker already on the machine if one works, otherwise it sets up Docker Engine inside WSL2 (run project commands with `wsl -d Ubuntu -u dev --cd ~ -- <command>`, and keep the project in the WSL filesystem, not `/mnt/c`). Windows shows its own administrator prompt once, only when WSL must be enabled. The user clicks Yes; the plugin cannot and does not click it. With `--no-install`, skip this and list the commands instead.
+On Windows the installer uses a Docker already on the machine if one works, otherwise it sets up Docker Engine inside WSL2 (run project commands with `wsl -d Ubuntu -u dev --cd ~ -- <command>`, and keep the project in the WSL filesystem, not `/mnt/c`).
+
+#### WSL runtime (`install-prereqs.ps1` returned `runtime: "wsl"`)
+From then on the project lives inside the distro, so every later step runs there, with the bash scripts, not the `.ps1` ones:
+- Convert the script folder once: `wsl -d <distro> -u <user> -- wslpath -a '<SETUP_SCRIPTS as a Windows path>'` gives `<WSL_SCRIPTS>`.
+- Detect again inside WSL: `wsl -d <distro> -u <user> --cd ~ -- bash <WSL_SCRIPTS>/detect-env.sh --dir ~/<name>`. Use that JSON for ports and the target folder.
+- Secrets: `wsl -d <distro> -u <user> --cd ~/<name> -- bash <WSL_SCRIPTS>/gen-secrets.sh . --compose --dev-login`.
+- Health check: `wsl -d <distro> -u <user> --cd ~/<name> -- bash <WSL_SCRIPTS>/health-check.sh --dir . --runtime docker`.
+- Pass `runtime: wsl`, the distro and the user to the agent, so it wraps every command the same way.
+- The site and admin URLs on `127.0.0.1` work from the Windows browser, because WSL2 forwards localhost ports.
+`runtime: "host-docker"` (a Docker Desktop the user already has) keeps the `.ps1` scripts on Windows. Windows shows its own administrator prompt once, only when WSL must be enabled. The user clicks Yes; the plugin cannot and does not click it. With `--no-install`, skip this and list the commands instead.
 
 Pass `--ask` to turn the old behaviour back on: the command then stops and asks at each row above instead of deciding.
 
@@ -126,7 +146,7 @@ When the agent returns `needs approval` or `blocked`, apply the "Decide, do not 
 ## Step 4. Validate
 Run the health check yourself (do not rely on the agent's report):
 ```bash
-bash "${CLAUDE_SKILL_DIR}/scripts/health-check.sh" --dir "<project>" --runtime <docker|native> [--url <base url>]
+bash "${CLAUDE_SKILL_DIR}/scripts/health-check.sh" --dir "<project>" --runtime <docker|native> [--url <base url>] [--docker-cmd "<dockerCmd>"]
 ```
 If checks 1 to 4 do not all pass, run the `--repair` flow once for the failing check, then re-run the health check.
 

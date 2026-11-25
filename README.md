@@ -1,9 +1,11 @@
 # Pimcore Engineering Toolkit
 
-A Claude Code plugin for Pimcore projects. It is version-aware and has no ties to any one project. It gives you two commands:
+A Claude Code plugin for Pimcore projects. It is version-aware and has no ties to any one project. It gives you four commands:
 
 - **`/pimcore <request>`**: the development entry point. It takes a request in plain language, detects the project's Pimcore, PHP and Symfony versions, reads the project's `CLAUDE.md`, starts only the specialist agents the task needs, validates the work and reports.
 - **`/pimcore-setup [name] [flags]`**: sets up a Pimcore development environment on Linux, macOS, WSL2 or Windows. Docker is the default and native is optional. Credentials are generated and never printed, and it finishes with five health checks.
+- **`/pimcore-review [--all | --staged | --base <branch>]`**: code review of your changes and everything they affect, or of the whole codebase with `--all`. Each finding shows the file and line, the lines of code that cause it, why it is a problem, the fix and a test plan. It also runs on its own after Claude changes code (see "Automatic review").
+- **`/pimcore-doctor [<folder>] [--online]`**: a read-only health and best-practice audit of an existing project, with pass, warn or fail per check and the fix for each.
 
 ## Install
 
@@ -31,6 +33,25 @@ claude plugin update pimcore-toolkit@pimcore-toolkit
 ```
 
 Then run `/reload-plugins`. See `CHANGELOG.md` for what changed.
+
+### Automatic updates
+
+Claude Code can update the plugin by itself whenever a new version is published. For plugins outside the official marketplace this is off by default and only you can turn it on (the author cannot do it for you). Turn it on once, either way:
+
+- In Claude Code: `/plugin`, then Marketplaces, `pimcore-toolkit`, Enable auto-update.
+- From a terminal, with the helper shipped in the plugin:
+
+```bash
+bash ~/.claude/plugins/marketplaces/pimcore-toolkit/skills/pimcore/scripts/enable-auto-update.sh          # turn on
+bash ~/.claude/plugins/marketplaces/pimcore-toolkit/skills/pimcore/scripts/enable-auto-update.sh --check  # show the status
+bash ~/.claude/plugins/marketplaces/pimcore-toolkit/skills/pimcore/scripts/enable-auto-update.sh --off    # turn off
+```
+
+The helper sets `extraKnownMarketplaces.pimcore-toolkit.autoUpdate` to `true` in `~/.claude/settings.json` and keeps a backup of the old file next to it. Claude Code then checks for a new version at startup and applies it after `/reload-plugins` or the next start.
+
+If `DISABLE_AUTOUPDATER`, `DISABLE_UPDATES` or `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` is set in your environment (some desktop and managed setups set one), updates are blocked. Set `FORCE_AUTOUPDATE_PLUGINS=1` to keep plugin updates on anyway. `--check` reports when one of them is set. `/pimcore-doctor` also reports the status.
+
+Every release raises the version in `.claude-plugin/plugin.json`, which is what Claude Code compares.
 
 Type `/pimcore` or `/pimcore-setup` to check that the commands are available.
 
@@ -85,7 +106,25 @@ Useful `/pimcore-setup` options: `--plan`, `--ask`, `--secure-admin`, `--no-inst
 /pimcore-setup --dir ./existing-project         # existing profile is picked automatically
 /pimcore-setup --check --dir ./acme-pim         # health checks only
 /pimcore-setup --repair --dir ./acme-pim        # diagnose and fix a broken environment
+
+/pimcore-review                                 # uncommitted changes and what they affect
+/pimcore-review --base production               # everything since the branch left production
+/pimcore-review --all --focus security          # whole codebase, security first
+/pimcore-doctor                                 # audit the current project, change nothing
+/pimcore-doctor ./acme-pim --online             # also check composer advisories
 ```
+
+## Automatic review
+
+After Claude changes code in a Pimcore project (a git repository with `pimcore/pimcore` in `composer.json`), the plugin's Stop hook asks Claude to run `/pimcore-review` on the changes before it finishes. It only reacts to code files (PHP, Twig, YAML, XML, JS, TS, SQL), runs once per new set of changes and never loops. The review reads the code and changes nothing; you decide what to fix.
+
+Turn it off everywhere with `PIMCORE_AUTO_REVIEW=0` in your environment, or for one project:
+
+```bash
+git config pimcore.autoReview false
+```
+
+The hook writes one small state file inside `.git` and nothing else. Outside Pimcore projects it does nothing.
 
 ## Agents
 
@@ -159,7 +198,7 @@ Claude Code discovers skills only one level deep (`skills/<name>/SKILL.md`). The
 5. An independent reviewer checks code written in the run against the real `git diff`. Critical and high findings get at most two fix rounds.
 6. Validation runs: tier 1 checks, tests, and container or route checks for configuration changes. The report lists every command and its result. Nothing is committed or pushed.
 
-`/pimcore-setup` works the same way. It runs `detect-env` and plans, and decides on its own. It installs missing prerequisites itself (WSL2 with Docker Engine inside it on Windows, Docker Engine on Linux with passwordless sudo, and Colima on macOS; all free, Docker Desktop is never installed). The only things it cannot do for you are the operating system's own consent steps: the Windows administrator prompt (only when WSL must be enabled), a `sudo` password and a restart. Use `--no-install` to skip installing. The `pimcore-environment-setup` agent builds the environment. The command then runs `health-check` itself and reports.
+`/pimcore-setup` works the same way. It runs `detect-env` and plans, and decides on its own. It installs missing prerequisites itself (WSL2 with Docker Engine inside it on Windows, Docker Engine on Linux with passwordless sudo, and Colima on macOS; all free, Docker Desktop is never installed). The only things it cannot do for you are the operating system's own consent steps: the Windows administrator prompt (only when WSL must be enabled), a `sudo` password and a restart. For the `sudo` password it opens the command in a terminal tab where you type it, then carries on. After Docker is installed it runs Docker through `sg docker`, so no logout is needed. On Windows it runs the scripts inside WSL itself. Use `--no-install` to skip installing. The `pimcore-environment-setup` agent builds the environment. The command then runs `health-check` itself and reports.
 
 ### Setup security
 
@@ -176,12 +215,16 @@ pimcore-toolkit/
   references/orchestration.md  routing table, workflows, validation rules
   references/output-formats.md report formats (routing, feature, bug, review, plan, setup)
   references/pimcore-versions.md version matrix 10 to 2026, LTS, Studio, sources
-  skills/pimcore/              /pimcore entry + scripts/{detect-project,scan-platform-impact}.sh + platform-impact-rules.json
-  skills/pimcore-setup/        /pimcore-setup entry + scripts/{detect-env,gen-secrets,health-check}.{sh,ps1}
+  hooks/hooks.json, auto-review.sh  automatic review after code changes
+  skills/pimcore/              /pimcore entry + scripts/{detect-project,scan-platform-impact,enable-auto-update}.sh + platform-impact-rules.json
+  skills/pimcore-setup/        /pimcore-setup entry + scripts/{detect-env,gen-secrets,health-check,install-prereqs}.{sh,ps1}
+  skills/pimcore-review/       /pimcore-review entry + scripts/review-scope.sh
+  skills/pimcore-doctor/       /pimcore-doctor entry + scripts/doctor.sh
   skills/pimcore-engineering/  hidden, 18 modules
   skills/pimcore-environment/  hidden, 8 modules
   tests/test_structure.py      structure and style checks (python3, no dependencies)
   tests/scenarios.md           8 routing scenarios
+  GUIDE.md                     step-by-step user guide
 ```
 
 ## Tests
@@ -201,7 +244,8 @@ For the routing scenarios, see `tests/scenarios.md`.
 - Studio support: the Studio UI and Studio Backend modules cover what the official docs describe (React, Rsbuild, entry-point provider, backend controllers, events, grid tags). The JavaScript plugin registration API was not in the pages the modules are based on, so the module tells you to copy the official example bundle and read the installed package.
 - The upgrade impact scan only checks the items in its rules file, and `heuristic` matches (for example bundles matched by namespace because their Packagist name could not be confirmed) are leads, not proof. The 2024.x, 2025.x and 11 to 12 items were read from fetched summaries of the official upgrade notes, so check identifiers against `vendor/` or the linked page. The per-bundle upgrade notes (Data Importer, Data Hub, Generic Data Index and others) were not read.
 - The quality of the agents depends on the project. A project with no tests or static analysis gets weaker validation, and the report says so.
-- Future work: **`/pimcore-doctor`**, a read-only health and best-practice audit of an existing project. It would cover configuration, class definitions, workers, caches, indexes, security headers and deprecated API use, and would reuse `health-check` and the code-review module.
+- `/pimcore-doctor` checks what can be read from files and git. It does not open the admin, measure performance or check security headers on a running site.
+- The automatic review needs `git`. Changes outside a git repository are not reviewed automatically; run `/pimcore-review` by hand.
 
 ## Feedback and issues
 

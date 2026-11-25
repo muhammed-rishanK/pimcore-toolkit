@@ -35,7 +35,7 @@ Break an analysed requirement into an ordered, sized plan of work units that a d
 - Forgetting the cache clear or class rebuild in the deploy steps, so the change works locally but not on the server.
 
 ## Version notes
-Deploy commands differ by version: Pimcore 10 and 11 use Doctrine migrations (`doctrine:migrations:migrate`) and `pimcore:deployment:classes-rebuild`. Confirm with `bin/console list pimcore:deployment` and `bin/console list doctrine` in the project.
+Deploy commands differ by version: Pimcore 10 and 11 use Doctrine migrations and `pimcore:deployment:classes-rebuild`. Plan each migration the change adds as a targeted step, `bin/console doctrine:migrations:execute '<FQCN of the class>' --up --no-interaction`, with the class name read from the file. Do not plan `doctrine:migrations:migrate`: it applies every pending migration, including ones nobody asked for. Confirm with `bin/console list pimcore:deployment` and `bin/console list doctrine` in the project.
 
 ## Example
 Feature "add a `warrantyMonths` field to Product, export it to the shop":

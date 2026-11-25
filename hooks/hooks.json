@@ -1,0 +1,27 @@
+{
+  "description": "Pimcore auto-review: after Claude changes code in a Pimcore project, it reviews the changes before it finishes. Off with PIMCORE_AUTO_REVIEW=0 or git config pimcore.autoReview false.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/auto-review.sh\" baseline",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/auto-review.sh\" stop",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}

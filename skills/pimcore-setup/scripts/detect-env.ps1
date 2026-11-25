@@ -24,6 +24,15 @@ if (Tool docker-compose) { $docker.composeV1Present = $true }
 
 $wsl = $null
 if (Tool wsl) { $wsl = (Run wsl @('--status')) -replace "`0", '' }
+# Docker Engine inside the WSL distro set up by install-prereqs.ps1 (the free route).
+$wslDocker = [ordered]@{ distro = $null; dockerRunning = $false }
+if (Tool wsl) {
+  $distros = ((Run wsl @('-l', '-q')) -replace "`0", '') -split "`r?`n" | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+  if ($distros -contains 'Ubuntu') {
+    $wslDocker.distro = 'Ubuntu'
+    & wsl -d Ubuntu -- docker info *> $null; if ($LASTEXITCODE -eq 0) { $wslDocker.dockerRunning = $true }
+  }
+}
 
 $php = [ordered]@{ version = $null; extensions = $null }
 if (Tool php) {
@@ -59,6 +68,7 @@ $out = [ordered]@{
   memGB = if ($cs) { [math]::Round($cs.TotalPhysicalMemory / 1GB, 1) } else { $null }
   diskFreeGB = if ($drive) { [math]::Round($drive.Free / 1GB, 1) } else { $null }
   wsl = $wsl
+  wslDocker = $wslDocker
   docker = $docker
   php = $php
   composer = if (Tool composer) { ((Run composer @('--version', '--no-ansi')) -split ' ')[2] } else { $null }

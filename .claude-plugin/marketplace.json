@@ -11,7 +11,7 @@
     {
       "name": "pimcore-toolkit",
       "source": "./",
-      "description": "Pimcore development (/pimcore) and environment setup (/pimcore-setup) with specialist agents, including Studio and 2026 upgrade support."
+      "description": "Pimcore development (/pimcore), environment setup (/pimcore-setup), code review with fixes and test plans (/pimcore-review, also automatic after code changes) and a project audit (/pimcore-doctor), with specialist agents, Studio and 2026 upgrade support."
     }
   ]
 }
